@@ -37,9 +37,7 @@ public class LoginPresenter {
             Cache.getInstance().setCurrUserAuthToken(authToken);
 
             view.showLoginInToast();
-
             view.loginSuccess(loggedInUser);
-
             view.showLoginSuccessToast();
         }
 

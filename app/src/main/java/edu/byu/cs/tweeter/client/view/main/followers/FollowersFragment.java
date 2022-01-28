@@ -32,6 +32,7 @@ import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowersTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.presenter.FollowersPresenter;
+import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
 
@@ -46,11 +47,11 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
     private static final int LOADING_DATA_VIEW = 0;
     private static final int ITEM_VIEW = 1;
 
-    private static final int PAGE_SIZE = 10;
-
     private User user;
 
     private FollowersRecyclerViewAdapter followersRecyclerViewAdapter;
+
+    private FollowersPresenter presenter;
 
     /**
      * Creates an instance of the fragment and places the target user in an arguments
@@ -87,6 +88,9 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
 
         followersRecyclerView.addOnScrollListener(new FollowRecyclerViewPaginationScrollListener(layoutManager));
 
+        presenter = new FollowersPresenter(this);
+        presenter.loadMoreItems(user);
+
         return view;
     }
 
@@ -106,8 +110,8 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
     }
 
     @Override
-    public void addFollowers(List<User> followees) {
-        followersRecyclerViewAdapter.addItems(followees);
+    public void addFollowers(List<User> followers) {
+        followersRecyclerViewAdapter.addItems(followers);
     }
 
     @Override
@@ -116,6 +120,8 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
         intent.putExtra(MainActivity.CURRENT_USER_KEY, thisUser);
         startActivity(intent);
     }
+
+
 
     /**
      * The ViewHolder for the RecyclerView that displays the follower data.
@@ -196,17 +202,12 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
 
         private final List<User> users = new ArrayList<>();
 
-        private User lastFollower;
-
-        private boolean hasMorePages;
-        private boolean isLoading = false;
-
         /**
          * Creates an instance and loads the first page of following data.
          */
-        FollowersRecyclerViewAdapter() {
-            loadMoreItems();
-        }
+//        FollowersRecyclerViewAdapter() {
+//            loadMoreItems();
+//        }
 
         /**
          * Adds new users to the list from which the RecyclerView retrieves the users it displays
@@ -277,7 +278,7 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
          */
         @Override
         public void onBindViewHolder(@NonNull FollowersHolder followingHolder, int position) {
-            if (!isLoading) {
+            if (!presenter.isLoading()) {
                 followingHolder.bindUser(users.get(position));
             }
         }
@@ -301,7 +302,7 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
          */
         @Override
         public int getItemViewType(int position) {
-            return (position == users.size() - 1 && isLoading) ? LOADING_DATA_VIEW : ITEM_VIEW;
+            return (position == users.size() - 1 && presenter.isLoading()) ? LOADING_DATA_VIEW : ITEM_VIEW;
         }
 
         /**
@@ -309,12 +310,7 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
          * data.
          */
         void loadMoreItems() {
-            if (!isLoading) {   // This guard is important for avoiding a race condition in the scrolling code.
-                isLoading = true;
-                addLoadingFooter();
-
-
-            }
+            presenter.loadMoreItems(user);
         }
 
         /**
@@ -369,7 +365,7 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
             int totalItemCount = layoutManager.getItemCount();
             int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
 
-            if (!followersRecyclerViewAdapter.isLoading && followersRecyclerViewAdapter.hasMorePages) {
+            if (!presenter.isLoading() && presenter.hasMorePages()) {
                 if ((visibleItemCount + firstVisibleItemPosition) >=
                         totalItemCount && firstVisibleItemPosition >= 0) {
                     // Run this code later on the UI thread

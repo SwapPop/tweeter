@@ -27,7 +27,7 @@ public class LoginPresenter {
     }
 
     public void login(String alias, String password) {
-
+        userService.Login(alias, password, new GetLoginObserver());
     }
 
     public class GetLoginObserver implements UserService.GetLoginObserver {

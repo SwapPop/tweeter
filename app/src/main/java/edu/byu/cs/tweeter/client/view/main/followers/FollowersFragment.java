@@ -31,13 +31,14 @@ import edu.byu.cs.client.R;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowersTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
 import edu.byu.cs.tweeter.client.cache.Cache;
+import edu.byu.cs.tweeter.client.presenter.FollowersPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
 
 /**
  * Implements the "Followers" tab.
  */
-public class FollowersFragment extends Fragment {
+public class FollowersFragment extends Fragment implements FollowersPresenter.View {
 
     private static final String LOG_TAG = "FollowersFragment";
     private static final String USER_KEY = "UserKey";
@@ -87,6 +88,33 @@ public class FollowersFragment extends Fragment {
         followersRecyclerView.addOnScrollListener(new FollowRecyclerViewPaginationScrollListener(layoutManager));
 
         return view;
+    }
+
+    @Override
+    public void displayMessage(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void setLoadingStatus(boolean value) {
+        if(value) {
+            followersRecyclerViewAdapter.addLoadingFooter();
+        }
+        else {
+            followersRecyclerViewAdapter.removeLoadingFooter();
+        }
+    }
+
+    @Override
+    public void addFollowers(List<User> followees) {
+        followersRecyclerViewAdapter.addItems(followees);
+    }
+
+    @Override
+    public void startMainActivity(User thisUser) {
+        Intent intent = new Intent(getContext(), MainActivity.class);
+        intent.putExtra(MainActivity.CURRENT_USER_KEY, thisUser);
+        startActivity(intent);
     }
 
     /**
@@ -285,10 +313,7 @@ public class FollowersFragment extends Fragment {
                 isLoading = true;
                 addLoadingFooter();
 
-                GetFollowersTask getFollowersTask = new GetFollowersTask(Cache.getInstance().getCurrUserAuthToken(),
-                        user, PAGE_SIZE, lastFollower, new GetFollowersHandler());
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                executor.execute(getFollowersTask);
+
             }
         }
 
@@ -308,33 +333,6 @@ public class FollowersFragment extends Fragment {
             removeItem(users.get(users.size() - 1));
         }
 
-
-        /**
-         * Message handler (i.e., observer) for GetFollowersTask.
-         */
-        private class GetFollowersHandler extends Handler {
-            @Override
-            public void handleMessage(@NonNull Message msg) {
-                isLoading = false;
-                removeLoadingFooter();
-
-                boolean success = msg.getData().getBoolean(GetFollowersTask.SUCCESS_KEY);
-                if (success) {
-                    List<User> followers = (List<User>) msg.getData().getSerializable(GetFollowersTask.FOLLOWERS_KEY);
-                    hasMorePages = msg.getData().getBoolean(GetFollowersTask.MORE_PAGES_KEY);
-
-                    lastFollower = (followers.size() > 0) ? followers.get(followers.size() - 1) : null;
-
-                    followersRecyclerViewAdapter.addItems(followers);
-                } else if (msg.getData().containsKey(GetFollowersTask.MESSAGE_KEY)) {
-                    String message = msg.getData().getString(GetFollowersTask.MESSAGE_KEY);
-                    Toast.makeText(getContext(), "Failed to get followers: " + message, Toast.LENGTH_LONG).show();
-                } else if (msg.getData().containsKey(GetFollowersTask.EXCEPTION_KEY)) {
-                    Exception ex = (Exception) msg.getData().getSerializable(GetFollowersTask.EXCEPTION_KEY);
-                    Toast.makeText(getContext(), "Failed to get followers because of exception: " + ex.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            }
-        }
     }
 
     /**

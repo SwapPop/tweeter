@@ -21,8 +21,12 @@ public class MainPresenter {
         void enableFollowButton();
 
         void setFollowersCount(int count);
-
         void setFollowingCount(int count);
+
+        void logoutUser();
+
+        void showLogoutToast();
+        void cancelLogoutToast();
     }
 
     //Services
@@ -63,20 +67,22 @@ public class MainPresenter {
         followService.getFollowingCount(Cache.getInstance().getCurrUserAuthToken(), selectedUser, new MainPresenter.GetFollowingCountObserver());
     }
 
+    public void logout() {
+        view.showLogoutToast();
+        userService.logout(Cache.getInstance().getCurrUserAuthToken(), new MainPresenter.LogoutObserver());
+    }
+
     //Observer implementation(s)
 
     public class IsFollowerObserver implements FollowService.IsFollowerObserver {
-
         @Override
         public void handleSuccess(boolean isFollower) {
             view.setFollowing(isFollower);
         }
-
         @Override
         public void handleFailure(String message) {
             view.displayMessage("Failed to determine following relationship: " + message);
         }
-
         @Override
         public void handleException(Exception exception) {
             view.displayMessage("Failed to determine following relationship because of exception: " + exception.getMessage());
@@ -84,20 +90,17 @@ public class MainPresenter {
     }
 
     public class FollowObserver implements FollowService.FollowObserver {
-
         @Override
         public void handleSuccess() {
             view.updateSelectedUserFollowingAndFollowers();
             view.updateFollowButton(false);
             view.enableFollowButton();
         }
-
         @Override
         public void handleFailure(String message) {
             view.displayMessage("Failed to follow: " + message);
             view.enableFollowButton();
         }
-
         @Override
         public void handleException(Exception exception) {
             view.displayMessage("Failed to follow because of exception: " + exception.getMessage());
@@ -106,20 +109,17 @@ public class MainPresenter {
     }
 
     public class UnfollowObserver implements FollowService.UnfollowObserver {
-
         @Override
         public void handleSuccess() {
             view.updateSelectedUserFollowingAndFollowers();
             view.updateFollowButton(true);
             view.enableFollowButton();
         }
-
         @Override
         public void handleFailure(String message) {
             view.displayMessage("Failed to unfollow: " + message);
             view.enableFollowButton();
         }
-
         @Override
         public void handleException(Exception exception) {
             view.displayMessage("Failed to unfollow because of exception: " + exception.getMessage());
@@ -128,17 +128,14 @@ public class MainPresenter {
     }
 
     public class GetFollowersCountObserver implements FollowService.GetFollowersCountObserver {
-
         @Override
         public void handleSuccess(int count) {
             view.setFollowersCount(count);
         }
-
         @Override
         public void handleFailure(String message) {
             view.displayMessage("Failed to get followers count: " + message);
         }
-
         @Override
         public void handleException(Exception exception) {
             view.displayMessage("Failed to get followers count because of exception: " + exception.getMessage());
@@ -146,20 +143,33 @@ public class MainPresenter {
     }
 
     public class GetFollowingCountObserver implements FollowService.GetFollowingCountObserver {
-
         @Override
         public void handleSuccess(int count) {
             view.setFollowingCount(count);
         }
-
         @Override
         public void handleFailure(String message) {
             view.displayMessage("Failed to get following count: " + message);
         }
-
         @Override
         public void handleException(Exception exception) {
             view.displayMessage("Failed to get following count because of exception: " + exception.getMessage());
+        }
+    }
+
+    public class LogoutObserver implements UserService.LogoutObserver {
+        @Override
+        public void handleSuccess() {
+            view.cancelLogoutToast();
+            view.logoutUser();
+        }
+        @Override
+        public void handleFailure(String message) {
+            view.displayMessage("Failed to logout: " + message);
+        }
+        @Override
+        public void handleException(Exception exception) {
+            view.displayMessage("Failed to logout because of exception: " + exception.getMessage());
         }
     }
 }

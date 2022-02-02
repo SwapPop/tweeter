@@ -26,10 +26,10 @@ public class LoginPresenter {
     }
 
     public void login(String alias, String password) {
-        userService.Login(alias, password, new GetLoginObserver());
+        userService.Login(alias, password, new LoginObserver());
     }
 
-    public class GetLoginObserver implements UserService.GetLoginObserver {
+    public class LoginObserver implements UserService.LoginObserver {
 
         @Override
         public void handleSuccess(User loggedInUser, AuthToken authToken) {

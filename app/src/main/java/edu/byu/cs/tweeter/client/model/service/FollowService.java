@@ -25,7 +25,6 @@ import edu.byu.cs.tweeter.model.domain.User;
 
 public class FollowService {
 
-
     public interface GetFollowingObserver {
         void handleSuccess(List<User> followees, boolean hasMorePages);
         void handleFailure(String message);
@@ -37,8 +36,6 @@ public class FollowService {
         void handleFailure(String message);
         void handleException(Exception exception);
     }
-
-    //IsFollowerObserver
 
     public interface IsFollowerObserver {
         void handleSuccess(boolean isFollower);
@@ -70,6 +67,8 @@ public class FollowService {
         void handleException(Exception exception);
     }
 
+
+
     public void getFollowing(AuthToken currUserAuthToken, User user, int pageSize, User lastFollowee, GetFollowingObserver getFollowingObserver) {
         GetFollowingTask getFollowingTask = new GetFollowingTask(currUserAuthToken,
                 user, pageSize, lastFollowee, new GetFollowingHandler(getFollowingObserver));
@@ -84,15 +83,11 @@ public class FollowService {
         executor.execute(getFollowersTask);
     }
 
-    //IsFollower
-
     public void isFollower(AuthToken currUserAuthToken, User currentUser, User selectedUser, IsFollowerObserver isFollowerObserver){
         IsFollowerTask isFollowerTask = new IsFollowerTask(currUserAuthToken, currentUser, selectedUser, new IsFollowerHandler(isFollowerObserver));
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(isFollowerTask);
     }
-
-    //follow
 
     public void follow(AuthToken currUserAuthToken, User selectedUser, FollowObserver followObserver){
         FollowTask followTask = new FollowTask(currUserAuthToken,
@@ -100,8 +95,6 @@ public class FollowService {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(followTask);
     }
-
-    //unfollow
 
     public void unfollow(AuthToken currUserAuthToken, User selectedUser, UnfollowObserver unfollowObserver){
         UnfollowTask unfollowTask = new UnfollowTask(currUserAuthToken,
@@ -130,21 +123,17 @@ public class FollowService {
     }
 
 
+
     /**
      * Message handler (i.e., observer) for GetFollowingTask.
      */
     private class GetFollowingHandler extends Handler {
-
         private GetFollowingObserver observer;
-
         public GetFollowingHandler(GetFollowingObserver observer) {
             this.observer = observer;
         }
-
         @Override
         public void handleMessage(@NonNull Message msg) {
-
-
             boolean success = msg.getData().getBoolean(GetFollowingTask.SUCCESS_KEY);
             if (success) {
                 List<User> followees = (List<User>) msg.getData().getSerializable(GetFollowingTask.FOLLOWEES_KEY);
@@ -165,16 +154,12 @@ public class FollowService {
      * Message handler (i.e., observer) for GetFollowersTask.
      */
     private class GetFollowersHandler extends Handler {
-
         private GetFollowersObserver observer;
-
         public GetFollowersHandler(GetFollowersObserver observer) {
             this.observer = observer;
         }
-
         @Override
         public void handleMessage(@NonNull Message msg) {
-
             boolean success = msg.getData().getBoolean(GetFollowersTask.SUCCESS_KEY);
             if (success) {
                 List<User> followers = (List<User>) msg.getData().getSerializable(GetFollowersTask.FOLLOWERS_KEY);
@@ -192,13 +177,10 @@ public class FollowService {
     // IsFollowerHandler
 
     private class IsFollowerHandler extends Handler {
-
         private IsFollowerObserver observer;
-
         public IsFollowerHandler(IsFollowerObserver observer) {
             this.observer = observer;
         }
-
         @Override
         public void handleMessage(@NonNull Message msg) {
             boolean success = msg.getData().getBoolean(IsFollowerTask.SUCCESS_KEY);
@@ -220,9 +202,7 @@ public class FollowService {
     // FollowHandler
 
     private class FollowHandler extends Handler {
-
         private FollowObserver observer;
-
         public FollowHandler(FollowObserver observer) {
             this.observer = observer;
         }
@@ -245,7 +225,6 @@ public class FollowService {
 
     private class UnfollowHandler extends Handler {
         private UnfollowObserver observer;
-
         public UnfollowHandler(UnfollowObserver observer) {
             this.observer = observer;
         }
@@ -267,9 +246,7 @@ public class FollowService {
     // GetFollowersCountHandler
 
     private class GetFollowersCountHandler extends Handler {
-
         private GetFollowersCountObserver observer;
-
         public GetFollowersCountHandler(GetFollowersCountObserver observer) {
             this.observer = observer;
         }
@@ -292,9 +269,7 @@ public class FollowService {
     // GetFollowingCountHandler
 
     private class GetFollowingCountHandler extends Handler {
-
         private GetFollowingCountObserver observer;
-
         public GetFollowingCountHandler(GetFollowingCountObserver observer) {
             this.observer = observer;
         }
@@ -313,6 +288,4 @@ public class FollowService {
             }
         }
     }
-
-
 }

@@ -22,10 +22,10 @@ public class RegisterPresenter {
     }
 
     public void register(String firstName, String lastName, String alias, String password, String imageBytesBase64String) {
-        userService.Register(firstName, lastName, alias, password, imageBytesBase64String, new RegisterPresenter.GetRegisterObserver());
+        userService.Register(firstName, lastName, alias, password, imageBytesBase64String, new RegisterObserver());
     }
 
-    public class GetRegisterObserver implements UserService.GetRegisterObserver {
+    public class RegisterObserver implements UserService.RegisterObserver {
 
         @Override
         public void handleSuccess(User registeredUser, AuthToken authToken) {

@@ -86,6 +86,7 @@ public class MainPresenter {
     public void logout() {
         view.showLogoutToast();
         userService.logout(Cache.getInstance().getCurrUserAuthToken(), new MainPresenter.LogoutObserver());
+
     }
 
     public void post(String post) {
@@ -189,6 +190,7 @@ public class MainPresenter {
         public void handleSuccess() {
             view.cancelLogoutToast();
             view.logoutUser();
+            Cache.getInstance().clearCache();
         }
         @Override
         public void handleFailure(String message) {

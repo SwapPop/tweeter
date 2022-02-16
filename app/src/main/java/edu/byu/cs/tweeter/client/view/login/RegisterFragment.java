@@ -93,6 +93,8 @@ public class RegisterFragment extends Fragment implements RegisterPresenter.View
                     registeringToast = Toast.makeText(getContext(), "Registering...", Toast.LENGTH_LONG);
                     registeringToast.show();
 
+                    //TODO: move to Presenter
+
                     // Convert image to byte array.
                     Bitmap image = ((BitmapDrawable) imageToUpload.getDrawable()).getBitmap();
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -125,6 +127,8 @@ public class RegisterFragment extends Fragment implements RegisterPresenter.View
             imageUploaderButton.setText(R.string.afterUploadPicture);
         }
     }
+
+    //TODO: move to Presenter
 
     public void validateRegistration() {
         if (firstName.getText().length() == 0) {

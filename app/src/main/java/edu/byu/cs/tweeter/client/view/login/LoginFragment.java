@@ -60,6 +60,9 @@ public class LoginFragment extends Fragment implements LoginPresenter.View {
         password = view.findViewById(R.id.loginPassword);
         errorView = view.findViewById(R.id.loginError);
         Button loginButton = view.findViewById(R.id.loginButton);
+
+        presenter = new LoginPresenter(this);
+
         loginButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -69,11 +72,9 @@ public class LoginFragment extends Fragment implements LoginPresenter.View {
                     validateLogin();
                     errorView.setText(null);
 
-                    loginInToast = Toast.makeText(getContext(), "Logging In...", Toast.LENGTH_LONG);
-                    loginInToast.show();
-
                     // Send the login request.
                     presenter.login(alias.getText().toString(), password.getText().toString());
+
                 } catch (Exception e) {
                     errorView.setText(e.getMessage());
                 }
@@ -92,10 +93,21 @@ public class LoginFragment extends Fragment implements LoginPresenter.View {
     public void loginSuccess(User loggedInUser) {
         Intent intent = new Intent(getContext(), MainActivity.class);
         intent.putExtra(MainActivity.CURRENT_USER_KEY, loggedInUser);
+        startActivity(intent);
 
+
+    }
+
+    @Override
+    public void showLoginInToast() {
+        loginInToast = Toast.makeText(getContext(), "Logging In...", Toast.LENGTH_LONG);
+        loginInToast.show();
+    }
+
+    @Override
+    public void showLoginSuccessToast() {
         loginInToast.cancel();
         displayMessage("Hello " + Cache.getInstance().getCurrUser().getName());
-        startActivity(intent);
     }
 
     public void validateLogin() {

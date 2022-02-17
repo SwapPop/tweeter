@@ -8,7 +8,8 @@ import androidx.annotation.NonNull;
 import java.util.List;
 
 import edu.byu.cs.tweeter.client.model.service.StatusService;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFeedTask;
+import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetStoryTask;
+import edu.byu.cs.tweeter.client.model.service.backgroundTask.PagedTask;
 import edu.byu.cs.tweeter.model.domain.Status;
 
 /**
@@ -23,16 +24,16 @@ public class GetStoryHandler extends Handler {
 
     @Override
     public void handleMessage(@NonNull Message msg) {
-        boolean success = msg.getData().getBoolean(GetFeedTask.SUCCESS_KEY);
+        boolean success = msg.getData().getBoolean(GetStoryTask.SUCCESS_KEY);
         if (success) {
-            List<Status> statuses = (List<Status>) msg.getData().getSerializable(GetFeedTask.STATUSES_KEY);
-            boolean hasMorePages = msg.getData().getBoolean(GetFeedTask.MORE_PAGES_KEY);
+            List<Status> statuses = (List<Status>) msg.getData().getSerializable(PagedTask.ITEMS_KEY);
+            boolean hasMorePages = msg.getData().getBoolean(GetStoryTask.MORE_PAGES_KEY);
             observer.handleSuccess(statuses, hasMorePages);
-        } else if (msg.getData().containsKey(GetFeedTask.MESSAGE_KEY)) {
-            String message = msg.getData().getString(GetFeedTask.MESSAGE_KEY);
+        } else if (msg.getData().containsKey(GetStoryTask.MESSAGE_KEY)) {
+            String message = msg.getData().getString(GetStoryTask.MESSAGE_KEY);
             observer.handleFailure(message);
-        } else if (msg.getData().containsKey(GetFeedTask.EXCEPTION_KEY)) {
-            Exception ex = (Exception) msg.getData().getSerializable(GetFeedTask.EXCEPTION_KEY);
+        } else if (msg.getData().containsKey(GetStoryTask.EXCEPTION_KEY)) {
+            Exception ex = (Exception) msg.getData().getSerializable(GetStoryTask.EXCEPTION_KEY);
             observer.handleException(ex);
         }
     }

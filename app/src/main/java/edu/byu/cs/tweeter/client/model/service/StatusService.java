@@ -4,56 +4,43 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import edu.byu.cs.tweeter.client.model.service.backgroundTask.BackgroundTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFeedTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetStoryTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.PostStatusTask;
-import edu.byu.cs.tweeter.client.model.service.handler.GetFeedHandler;
-import edu.byu.cs.tweeter.client.model.service.handler.GetStoryHandler;
+import edu.byu.cs.tweeter.client.model.service.handler.PagedHandler;
 import edu.byu.cs.tweeter.client.model.service.handler.PostStatusHandler;
+import edu.byu.cs.tweeter.client.model.service.observer.PagedObserver;
+import edu.byu.cs.tweeter.client.model.service.observer.SimpleNotificationObserver;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class StatusService {
+public class StatusService extends Service {
 
-    public interface GetFeedObserver {
-        void handleSuccess(List<Status> feed, boolean hasMorePages);
-        void handleFailure(String message);
-        void handleException(Exception exception);
-    }
+    public interface GetFeedObserver extends PagedObserver<Status> { }
 
-    public interface GetStoryObserver {
-        void handleSuccess(List<Status> feed, boolean hasMorePages);
-        void handleFailure(String message);
-        void handleException(Exception exception);
-    }
+    public interface GetStoryObserver extends PagedObserver<Status> { }
 
-    public interface PostStatusObserver {
-        void handleSuccess();
-        void handleFailure(String message);
-        void handleException(Exception exception);
-    }
+    public interface PostStatusObserver extends SimpleNotificationObserver { }
 
 
     public void getFeed(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, StatusService.GetFeedObserver getFeedObserver) {
         GetFeedTask getFeedTask = new GetFeedTask(currUserAuthToken,
-                user, pageSize, lastStatus, new GetFeedHandler(getFeedObserver));
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(getFeedTask);
+                user, pageSize, lastStatus, new PagedHandler(getFeedObserver));
+        executeTask(getFeedTask);
     }
 
     public void getStory(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, StatusService.GetStoryObserver getStoryObserver) {
         GetStoryTask getStoryTask = new GetStoryTask(currUserAuthToken,
-                user, pageSize, lastStatus, new GetStoryHandler(getStoryObserver));
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(getStoryTask);
+                user, pageSize, lastStatus, new PagedHandler(getStoryObserver));
+        executeTask(getStoryTask);
     }
 
     public void postStatus(AuthToken currUserAuthToken, Status newStatus, PostStatusObserver postStatusObserver) {
         PostStatusTask statusTask = new PostStatusTask(currUserAuthToken,
                 newStatus, new PostStatusHandler(postStatusObserver));
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(statusTask);
+        executeTask(statusTask);
     }
 
 }

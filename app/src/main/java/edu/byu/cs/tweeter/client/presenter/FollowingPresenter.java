@@ -67,7 +67,7 @@ public class FollowingPresenter {
         userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAlias, new GetUserObserver());
     }
 
-    public class GetFollowingObserver implements FollowService.GetFollowingObserver {
+    public class GetFollowingObserver implements FollowService.GetFollowingObserver<User> {
 
         @Override
         public void handleSuccess(List<User> followees, boolean hasMorePages) {

@@ -12,13 +12,13 @@ import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowingCountT
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowingTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.IsFollowerTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.UnfollowTask;
-import edu.byu.cs.tweeter.client.model.service.handler.FollowHandler;
 import edu.byu.cs.tweeter.client.model.service.handler.GetFollowersCountHandler;
 import edu.byu.cs.tweeter.client.model.service.handler.GetFollowersHandler;
 import edu.byu.cs.tweeter.client.model.service.handler.GetFollowingCountHandler;
 import edu.byu.cs.tweeter.client.model.service.handler.GetFollowingHandler;
 import edu.byu.cs.tweeter.client.model.service.handler.IsFollowerHandler;
-import edu.byu.cs.tweeter.client.model.service.handler.UnfollowHandler;
+import edu.byu.cs.tweeter.client.model.service.handler.SimpleNotificationHandler;
+import edu.byu.cs.tweeter.client.model.service.observer.SimpleNotificationObserver;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 
@@ -42,17 +42,9 @@ public class FollowService {
         void handleException(Exception exception);
     }
 
-    public interface FollowObserver {
-        void handleSuccess();
-        void handleFailure(String message);
-        void handleException(Exception exception);
-    }
+    public interface FollowObserver extends SimpleNotificationObserver {}
 
-    public interface UnfollowObserver {
-        void handleSuccess();
-        void handleFailure(String message);
-        void handleException(Exception exception);
-    }
+    public interface UnfollowObserver extends SimpleNotificationObserver {}
 
     public interface GetFollowersCountObserver {
         void handleSuccess(int count);
@@ -90,14 +82,14 @@ public class FollowService {
 
     public void follow(AuthToken currUserAuthToken, User selectedUser, FollowObserver followObserver){
         FollowTask followTask = new FollowTask(currUserAuthToken,
-                selectedUser, new FollowHandler(followObserver));
+                selectedUser, new SimpleNotificationHandler(followObserver));
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(followTask);
     }
 
     public void unfollow(AuthToken currUserAuthToken, User selectedUser, UnfollowObserver unfollowObserver){
         UnfollowTask unfollowTask = new UnfollowTask(currUserAuthToken,
-                selectedUser, new UnfollowHandler(unfollowObserver));
+                selectedUser, new SimpleNotificationHandler(unfollowObserver));
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(unfollowTask);
     }

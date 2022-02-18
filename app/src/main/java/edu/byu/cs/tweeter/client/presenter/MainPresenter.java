@@ -24,8 +24,6 @@ public class MainPresenter{
     //View
 
     public interface View extends Presenter.View{
-        void displayMessage(String message);
-
         void setFollowing(boolean isFollower);
 
         void updateFollowButton(boolean removed);
@@ -104,6 +102,32 @@ public class MainPresenter{
 
     //Observer implementation(s)
 
+    public abstract class MainObserver implements SimpleNotificationObserver {
+        @Override
+        public void handleFailure(String message) {
+            view.displayMessage("Failed to "+getActionString()+": " + message);
+        }
+        @Override
+        public void handleException(Exception exception) {
+            view.displayMessage("Failed to "+getActionString()+" because of exception: " + exception.getMessage());
+        }
+
+        public abstract String getActionString();
+    }
+
+    public abstract class MainCountObserver implements CountObserver {
+        @Override
+        public void handleFailure(String message) {
+            view.displayMessage("Failed to "+getActionString()+": " + message);
+        }
+        @Override
+        public void handleException(Exception exception) {
+            view.displayMessage("Failed to "+getActionString()+" because of exception: " + exception.getMessage());
+        }
+
+        public abstract String getActionString();
+    }
+
     public class IsFollowerObserver implements edu.byu.cs.tweeter.client.model.service.observer.IsFollowerObserver {
         @Override
         public void handleSuccess(boolean isFollower) {
@@ -157,66 +181,53 @@ public class MainPresenter{
         }
     }
 
-    public class GetFollowersCountObserver implements CountObserver {
+    public class GetFollowersCountObserver extends MainCountObserver {
         @Override
         public void handleSuccess(int count) {
             view.setFollowersCount(count);
         }
+
         @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to get followers count: " + message);
-        }
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to get followers count because of exception: " + exception.getMessage());
+        public String getActionString() {
+            return "get followers count";
         }
     }
 
-    public class GetFollowingCountObserver implements CountObserver {
+    public class GetFollowingCountObserver extends MainCountObserver {
         @Override
         public void handleSuccess(int count) {
             view.setFollowingCount(count);
         }
         @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to get following count: " + message);
-        }
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to get following count because of exception: " + exception.getMessage());
+        public String getActionString() {
+            return "get following count";
         }
     }
 
-    public class LogoutObserver implements SimpleNotificationObserver {
+    public class LogoutObserver extends MainObserver {
         @Override
         public void handleSuccess() {
             view.cancelLogoutToast();
             view.logoutUser();
             Cache.getInstance().clearCache();
         }
+
         @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to logout: " + message);
-        }
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to logout because of exception: " + exception.getMessage());
+        public String getActionString() {
+            return "logout";
         }
     }
 
-    public class PostStatusObserver implements SimpleNotificationObserver {
+    public class PostStatusObserver extends MainObserver {
         @Override
         public void handleSuccess() {
             view.cancelPostToast();
             view.displayMessage("Successfully Posted!");
         }
+
         @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to post status: " + message);
-        }
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to post the status because of exception: " + exception.getMessage());
+        public String getActionString() {
+            return "post status";
         }
     }
 

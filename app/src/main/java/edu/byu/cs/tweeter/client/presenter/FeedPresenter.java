@@ -5,112 +5,29 @@ import java.util.List;
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.StatusService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
+import edu.byu.cs.tweeter.client.model.service.observer.PagedObserver;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class FeedPresenter {
+public class FeedPresenter extends PagedPresenter<Status>{
 
-    private static final int PAGE_SIZE = 10;
+    protected StatusService statusService;
 
+    public interface View extends PagedPresenter.PagedView<Status>{}
 
-    public interface View {
-        void displayMessage(String message);
-        void setLoadingStatus(boolean value);
-
-        void addFeed(List<Status> feed);
-
-        void startMainActivity(User thisUser);
+    public FeedPresenter(View view) {
+        super(view);
+        this.statusService = new StatusService();
     }
 
-    private FeedPresenter.View view;
-    private StatusService statusService;
-    private UserService userService;
-
-    private Status lastStatus;
-
-    private boolean hasMorePages;
-    private boolean isLoading = false;
-
-    public boolean isLoading() {
-        return isLoading;
+    @Override
+    protected void getServiceItems(User user) {
+        statusService.getFeed(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastItem, new PagedTemplateObserver());
     }
 
-    public void setLoading(boolean loading) {
-        isLoading = loading;
-    }
-
-    public boolean hasMorePages() {
-        return hasMorePages;
-    }
-
-    public void setHasMorePages(boolean hasMorePages) {
-        this.hasMorePages = hasMorePages;
-    }
-
-    public FeedPresenter(FeedPresenter.View view) {
-        this.view = view;
-        statusService = new StatusService();
-        userService = new UserService();
-    }
-
-    public void loadMoreItems(User user) {
-        if (!isLoading) {   // This guard is important for avoiding a race condition in the scrolling code.
-            isLoading = true;
-            view.setLoadingStatus(true);
-        }
-        statusService.getFeed(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastStatus, new FeedPresenter.GetFeedObserver());
-    }
-
-
-    public void getUser(String userAlias) {
-        userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAlias, new FeedPresenter.GetUserObserver());
-    }
-
-    public class GetFeedObserver implements StatusService.GetFeedObserver {
-
-        @Override
-        public void handleSuccess(List<Status> statuses, boolean hasMorePages) {
-            isLoading = false;
-            view.setLoadingStatus(false);
-
-            lastStatus = (statuses.size() > 0) ? statuses.get(statuses.size() - 1) : null;
-            setHasMorePages(hasMorePages);
-
-            view.addFeed(statuses);
-        }
-
-        @Override
-        public void handleFailure(String message) {
-            isLoading = false;
-            view.setLoadingStatus(false);
-            view.displayMessage("Failed to get feed: " + message);
-        }
-
-        @Override
-        public void handleException(Exception exception) {
-            isLoading = false;
-            view.setLoadingStatus(false);
-            view.displayMessage("Failed to get feed because of exception: " + exception.getMessage());
-        }
-    }
-
-    public class GetUserObserver implements UserService.GetUserObserver {
-
-        @Override
-        public void handleSuccess(User thisUser) {
-            view.startMainActivity(thisUser);
-            view.displayMessage("Getting user's profile...");
-        }
-
-        @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to get user's profile: " + message);
-        }
-
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to get user's profile because of exception: " + exception.getMessage());
-        }
+    @Override
+    protected String getActionString() {
+        return "get feed";
     }
 
 }

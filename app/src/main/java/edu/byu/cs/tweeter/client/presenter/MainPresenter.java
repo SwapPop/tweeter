@@ -10,20 +10,20 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.byu.cs.client.R;
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.StatusService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
+import edu.byu.cs.tweeter.client.model.service.observer.CountObserver;
+import edu.byu.cs.tweeter.client.model.service.observer.SimpleNotificationObserver;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class MainPresenter {
+public class MainPresenter{
 
     //View
 
-    public interface View {
-        void displayMessage(String message);
+    public interface View extends Presenter.View{
         void setFollowing(boolean isFollower);
 
         void updateFollowButton(boolean removed);
@@ -102,7 +102,33 @@ public class MainPresenter {
 
     //Observer implementation(s)
 
-    public class IsFollowerObserver implements FollowService.IsFollowerObserver {
+    public abstract class MainObserver implements SimpleNotificationObserver {
+        @Override
+        public void handleFailure(String message) {
+            view.displayMessage("Failed to "+getActionString()+": " + message);
+        }
+        @Override
+        public void handleException(Exception exception) {
+            view.displayMessage("Failed to "+getActionString()+" because of exception: " + exception.getMessage());
+        }
+
+        public abstract String getActionString();
+    }
+
+    public abstract class MainCountObserver implements CountObserver {
+        @Override
+        public void handleFailure(String message) {
+            view.displayMessage("Failed to "+getActionString()+": " + message);
+        }
+        @Override
+        public void handleException(Exception exception) {
+            view.displayMessage("Failed to "+getActionString()+" because of exception: " + exception.getMessage());
+        }
+
+        public abstract String getActionString();
+    }
+
+    public class IsFollowerObserver implements edu.byu.cs.tweeter.client.model.service.observer.IsFollowerObserver {
         @Override
         public void handleSuccess(boolean isFollower) {
             view.setFollowing(isFollower);
@@ -117,7 +143,7 @@ public class MainPresenter {
         }
     }
 
-    public class FollowObserver implements FollowService.FollowObserver {
+    public class FollowObserver implements SimpleNotificationObserver {
         @Override
         public void handleSuccess() {
             view.updateSelectedUserFollowingAndFollowers();
@@ -136,7 +162,7 @@ public class MainPresenter {
         }
     }
 
-    public class UnfollowObserver implements FollowService.UnfollowObserver {
+    public class UnfollowObserver implements SimpleNotificationObserver {
         @Override
         public void handleSuccess() {
             view.updateSelectedUserFollowingAndFollowers();
@@ -155,66 +181,53 @@ public class MainPresenter {
         }
     }
 
-    public class GetFollowersCountObserver implements FollowService.GetFollowersCountObserver {
+    public class GetFollowersCountObserver extends MainCountObserver {
         @Override
         public void handleSuccess(int count) {
             view.setFollowersCount(count);
         }
+
         @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to get followers count: " + message);
-        }
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to get followers count because of exception: " + exception.getMessage());
+        public String getActionString() {
+            return "get followers count";
         }
     }
 
-    public class GetFollowingCountObserver implements FollowService.GetFollowingCountObserver {
+    public class GetFollowingCountObserver extends MainCountObserver {
         @Override
         public void handleSuccess(int count) {
             view.setFollowingCount(count);
         }
         @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to get following count: " + message);
-        }
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to get following count because of exception: " + exception.getMessage());
+        public String getActionString() {
+            return "get following count";
         }
     }
 
-    public class LogoutObserver implements UserService.LogoutObserver {
+    public class LogoutObserver extends MainObserver {
         @Override
         public void handleSuccess() {
             view.cancelLogoutToast();
             view.logoutUser();
             Cache.getInstance().clearCache();
         }
+
         @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to logout: " + message);
-        }
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to logout because of exception: " + exception.getMessage());
+        public String getActionString() {
+            return "logout";
         }
     }
 
-    public class PostStatusObserver implements StatusService.PostStatusObserver {
+    public class PostStatusObserver extends MainObserver {
         @Override
         public void handleSuccess() {
             view.cancelPostToast();
             view.displayMessage("Successfully Posted!");
         }
+
         @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to post status: " + message);
-        }
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to post the status because of exception: " + exception.getMessage());
+        public String getActionString() {
+            return "post status";
         }
     }
 

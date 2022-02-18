@@ -1,15 +1,10 @@
 package edu.byu.cs.tweeter.client.model.service;
 
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.BackgroundTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFeedTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetStoryTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.PostStatusTask;
 import edu.byu.cs.tweeter.client.model.service.handler.PagedHandler;
-import edu.byu.cs.tweeter.client.model.service.handler.PostStatusHandler;
+import edu.byu.cs.tweeter.client.model.service.handler.SimpleNotificationHandler;
 import edu.byu.cs.tweeter.client.model.service.observer.PagedObserver;
 import edu.byu.cs.tweeter.client.model.service.observer.SimpleNotificationObserver;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
@@ -18,28 +13,21 @@ import edu.byu.cs.tweeter.model.domain.User;
 
 public class StatusService extends Service {
 
-    public interface GetFeedObserver extends PagedObserver<Status> { }
-
-    public interface GetStoryObserver extends PagedObserver<Status> { }
-
-    public interface PostStatusObserver extends SimpleNotificationObserver { }
-
-
-    public void getFeed(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, StatusService.GetFeedObserver getFeedObserver) {
+    public void getFeed(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, PagedObserver<Status> getFeedObserver) {
         GetFeedTask getFeedTask = new GetFeedTask(currUserAuthToken,
-                user, pageSize, lastStatus, new PagedHandler(getFeedObserver));
+                user, pageSize, lastStatus, new PagedHandler<Status>(getFeedObserver));
         executeTask(getFeedTask);
     }
 
-    public void getStory(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, StatusService.GetStoryObserver getStoryObserver) {
+    public void getStory(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, PagedObserver<Status> getStoryObserver) {
         GetStoryTask getStoryTask = new GetStoryTask(currUserAuthToken,
-                user, pageSize, lastStatus, new PagedHandler(getStoryObserver));
+                user, pageSize, lastStatus, new PagedHandler<Status>(getStoryObserver));
         executeTask(getStoryTask);
     }
 
-    public void postStatus(AuthToken currUserAuthToken, Status newStatus, PostStatusObserver postStatusObserver) {
+    public void postStatus(AuthToken currUserAuthToken, Status newStatus, SimpleNotificationObserver postStatusObserver) {
         PostStatusTask statusTask = new PostStatusTask(currUserAuthToken,
-                newStatus, new PostStatusHandler(postStatusObserver));
+                newStatus, new SimpleNotificationHandler(postStatusObserver));
         executeTask(statusTask);
     }
 

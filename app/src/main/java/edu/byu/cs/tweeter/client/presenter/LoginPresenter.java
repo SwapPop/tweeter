@@ -1,17 +1,13 @@
 package edu.byu.cs.tweeter.client.presenter;
 
 
-import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.UserService;
-import edu.byu.cs.tweeter.client.model.service.observer.AuthObserver;
-import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 
 
-public class LoginPresenter {
-    public interface View {
-        void displayMessage(String message);
+public class LoginPresenter extends AuthPresenter{
 
+    public interface View extends Presenter.View{
         void loginSuccess(User loggedInUser);
 
         void showLoginInToast();
@@ -22,34 +18,24 @@ public class LoginPresenter {
     private UserService userService;
 
     public LoginPresenter(LoginPresenter.View view) {
+        super(view);
         this.view = view;
         userService = new UserService();
     }
 
     public void login(String alias, String password) {
-        userService.Login(alias, password, new LoginObserver());
+        userService.Login(alias, password, new AuthTemplateObserver());
     }
 
-    public class LoginObserver implements AuthObserver {
+    @Override
+    public void authSuccess(User loggedInUser) {
+        view.showLoginInToast();
+        view.loginSuccess(loggedInUser);
+        view.showLoginSuccessToast();
+    }
 
-        @Override
-        public void handleSuccess(User loggedInUser, AuthToken authToken) {
-            Cache.getInstance().setCurrUser(loggedInUser);
-            Cache.getInstance().setCurrUserAuthToken(authToken);
-
-            view.showLoginInToast();
-            view.loginSuccess(loggedInUser);
-            view.showLoginSuccessToast();
-        }
-
-        @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to login: " + message);
-        }
-
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to login because of exception: " + exception.getMessage());
-        }
+    @Override
+    protected String getActionString() {
+        return "log in";
     }
 }

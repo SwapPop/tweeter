@@ -10,4 +10,6 @@ public abstract class Presenter {
     public interface View{
         void displayMessage(String message);
     }
+
+    protected abstract String getActionString();
 }

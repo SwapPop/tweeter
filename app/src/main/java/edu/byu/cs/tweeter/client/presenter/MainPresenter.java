@@ -19,12 +19,13 @@ import edu.byu.cs.tweeter.client.model.service.observer.SimpleNotificationObserv
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class MainPresenter {
+public class MainPresenter{
 
     //View
 
-    public interface View {
+    public interface View extends Presenter.View{
         void displayMessage(String message);
+
         void setFollowing(boolean isFollower);
 
         void updateFollowButton(boolean removed);

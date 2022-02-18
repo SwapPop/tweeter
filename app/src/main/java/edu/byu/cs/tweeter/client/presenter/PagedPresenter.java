@@ -65,8 +65,6 @@ public abstract class PagedPresenter<T> extends Presenter{
 
     protected abstract void getServiceItems(User user);
 
-    protected abstract String getActionString();
-
     public void getUser(String userAlias) {
         userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAlias, new GetUserObserver());
     }

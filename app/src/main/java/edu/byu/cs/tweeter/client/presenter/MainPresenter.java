@@ -2,6 +2,8 @@ package edu.byu.cs.tweeter.client.presenter;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,7 +22,6 @@ import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
 public class MainPresenter{
-
     //View
 
     public interface View extends Presenter.View{
@@ -57,8 +58,20 @@ public class MainPresenter{
     public MainPresenter(MainPresenter.View view) {
         this.view = view;
         followService = new FollowService();
-        userService = new UserService();
-        statusService = new StatusService();
+    }
+
+    protected UserService getUserService() {
+        if (userService == null){
+            userService = new UserService();
+        }
+        return userService;
+    }
+
+    protected StatusService getStatusService() {
+        if (statusService == null){
+            statusService = new StatusService();
+        }
+        return statusService;
     }
 
     //"Get" Functions
@@ -85,19 +98,25 @@ public class MainPresenter{
 
     public void logout() {
         view.showLogoutToast();
-        userService.logout(Cache.getInstance().getCurrUserAuthToken(), new MainPresenter.LogoutObserver());
+        getUserService().logout(new MainPresenter.LogoutObserver());
 
     }
 
     public void post(String post) {
         view.showPostToast();
         try {
-            Status newStatus = new Status(post, Cache.getInstance().getCurrUser(), getFormattedDateTime(), parseURLs(post), parseMentions(post));
-            statusService.postStatus(Cache.getInstance().getCurrUserAuthToken(), newStatus, new MainPresenter.PostStatusObserver());
+            Status newStatus = getStatus(post);
+            getStatusService().postStatus(newStatus, new MainPresenter.PostStatusObserver());
         } catch (Exception ex) {
             Log.e(LOG_TAG, ex.getMessage(), ex);
-            view.displayMessage("Failed to post the status because of exception: " + ex.getMessage());
+            view.displayMessage("Failed to post status because of exception: " + ex.getMessage());
         }
+    }
+
+    @NonNull
+    private Status getStatus(String post) throws ParseException, MalformedURLException {
+        Status newStatus = new Status(post, Cache.getInstance().getCurrUser(), getFormattedDateTime(), parseURLs(post), parseMentions(post));
+        return newStatus;
     }
 
     //Observer implementation(s)
@@ -207,9 +226,9 @@ public class MainPresenter{
     public class LogoutObserver extends MainObserver {
         @Override
         public void handleSuccess() {
+            Cache.getInstance().clearCache();
             view.cancelLogoutToast();
             view.logoutUser();
-            Cache.getInstance().clearCache();
         }
 
         @Override

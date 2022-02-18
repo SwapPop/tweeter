@@ -1,5 +1,6 @@
 package edu.byu.cs.tweeter.client.model.service;
 
+import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFeedTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetStoryTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.PostStatusTask;
@@ -25,8 +26,8 @@ public class StatusService extends Service {
         executeTask(getStoryTask);
     }
 
-    public void postStatus(AuthToken currUserAuthToken, Status newStatus, SimpleNotificationObserver postStatusObserver) {
-        PostStatusTask statusTask = new PostStatusTask(currUserAuthToken,
+    public void postStatus(Status newStatus, SimpleNotificationObserver postStatusObserver) {
+        PostStatusTask statusTask = new PostStatusTask(Cache.getInstance().getCurrUserAuthToken(),
                 newStatus, new SimpleNotificationHandler(postStatusObserver));
         executeTask(statusTask);
     }

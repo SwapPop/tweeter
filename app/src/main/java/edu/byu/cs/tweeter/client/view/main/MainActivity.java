@@ -164,8 +164,6 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
 
     @Override
     public void onStatusPosted(String post) {
-        //TODO: move status creation and error handling all to presenter?
-
         presenter.post(post);
     }
 

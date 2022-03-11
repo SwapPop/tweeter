@@ -55,8 +55,7 @@ public class RegisterFragment extends Fragment implements RegisterPresenter.View
      * @return the fragment.
      */
     public static RegisterFragment newInstance() {
-        RegisterFragment fragment = new RegisterFragment();
-        return fragment;
+        return new RegisterFragment();
     }
 
     @Override
@@ -88,21 +87,13 @@ public class RegisterFragment extends Fragment implements RegisterPresenter.View
             public void onClick(View view) {
                 // Register and move to MainActivity.
                 try {
-                    validateRegistration();
+                    presenter.validateRegistration(firstName.getText().length(), lastName.getText().length(),
+                            alias.getText().length(), alias.getText().charAt(0), password.getText().length(), imageToUpload.getDrawable());
                     errorView.setText(null);
                     registeringToast = Toast.makeText(getContext(), "Registering...", Toast.LENGTH_LONG);
                     registeringToast.show();
 
-                    //TODO: move to Presenter
-
-                    // Convert image to byte array.
-                    Bitmap image = ((BitmapDrawable) imageToUpload.getDrawable()).getBitmap();
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    image.compress(Bitmap.CompressFormat.JPEG, 100, bos);
-                    byte[] imageBytes = bos.toByteArray();
-
-                    // Intentionally, Use the java Base64 encoder so it is compatible with M4.
-                    String imageBytesBase64 = Base64.getEncoder().encodeToString(imageBytes);
+                    String imageBytesBase64 = presenter.convertImage(((BitmapDrawable) imageToUpload.getDrawable()).getBitmap());
 
                     // Send register request.
                     presenter.register(firstName.getText().toString(), lastName.getText().toString(),
@@ -125,33 +116,6 @@ public class RegisterFragment extends Fragment implements RegisterPresenter.View
             Uri selectedImage = data.getData();
             imageToUpload.setImageURI(selectedImage);
             imageUploaderButton.setText(R.string.afterUploadPicture);
-        }
-    }
-
-    //TODO: move to Presenter
-
-    public void validateRegistration() {
-        if (firstName.getText().length() == 0) {
-            throw new IllegalArgumentException("First Name cannot be empty.");
-        }
-        if (lastName.getText().length() == 0) {
-            throw new IllegalArgumentException("Last Name cannot be empty.");
-        }
-        if (alias.getText().length() == 0) {
-            throw new IllegalArgumentException("Alias cannot be empty.");
-        }
-        if (alias.getText().charAt(0) != '@') {
-            throw new IllegalArgumentException("Alias must begin with @.");
-        }
-        if (alias.getText().length() < 2) {
-            throw new IllegalArgumentException("Alias must contain 1 or more characters after the @.");
-        }
-        if (password.getText().length() == 0) {
-            throw new IllegalArgumentException("Password cannot be empty.");
-        }
-
-        if (imageToUpload.getDrawable() == null) {
-            throw new IllegalArgumentException("Profile image must be uploaded.");
         }
     }
 

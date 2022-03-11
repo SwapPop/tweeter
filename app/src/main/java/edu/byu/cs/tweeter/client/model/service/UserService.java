@@ -30,8 +30,8 @@ public class UserService extends Service{
         executeTask(registerTask);
     }
 
-    public void logout(AuthToken currUserAuthToken, SimpleNotificationObserver logoutObserver){
-        LogoutTask logoutTask = new LogoutTask(currUserAuthToken, new SimpleNotificationHandler(logoutObserver));
+    public void logout(SimpleNotificationObserver logoutObserver){
+        LogoutTask logoutTask = new LogoutTask(Cache.getInstance().getCurrUserAuthToken(), new SimpleNotificationHandler(logoutObserver));
         executeTask(logoutTask);
     }
 }

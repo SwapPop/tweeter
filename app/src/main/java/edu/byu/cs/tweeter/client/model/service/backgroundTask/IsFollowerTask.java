@@ -36,7 +36,7 @@ public class IsFollowerTask extends AuthenticatedTask {
     }
 
     @Override
-    protected void processTask() {
+    protected void runTask() {
         isFollower = new Random().nextInt() > 0;
     }
 

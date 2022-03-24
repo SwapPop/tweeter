@@ -36,7 +36,7 @@ public class GetUserTask extends AuthenticatedTask {
     }
 
     @Override
-    protected void processTask() {
+    protected void runTask() {
         user = getFakeData().findUserByAlias(alias);
     }
 

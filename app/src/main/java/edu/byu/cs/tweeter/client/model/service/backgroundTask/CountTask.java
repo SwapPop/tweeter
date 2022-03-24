@@ -27,7 +27,7 @@ public abstract class CountTask extends AuthenticatedTask{
     }
 
     @Override
-    protected void processTask() {
+    protected void runTask() {
         count = 20;
     }
 

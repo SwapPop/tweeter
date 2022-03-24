@@ -19,7 +19,7 @@ public class LogoutTask extends AuthenticatedTask {
     }
 
     @Override
-    protected void processTask() {
+    protected void runTask() {
 
     }
 

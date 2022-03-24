@@ -48,7 +48,7 @@ public abstract class PagedTask<T> extends AuthenticatedTask{
     }
 
     @Override
-    protected void processTask() {
+    protected void runTask() {
         Pair<List<T>, Boolean> pageOfItems = getItems();
 
         items = pageOfItems.getFirst();

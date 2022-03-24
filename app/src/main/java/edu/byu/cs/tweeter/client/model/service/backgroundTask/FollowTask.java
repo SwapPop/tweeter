@@ -28,7 +28,7 @@ public class FollowTask extends AuthenticatedTask {
     }
 
     @Override
-    protected void processTask() {
+    protected void runTask() {
 
     }
 

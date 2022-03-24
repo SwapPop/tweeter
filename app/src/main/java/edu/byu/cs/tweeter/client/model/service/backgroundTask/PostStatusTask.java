@@ -27,7 +27,7 @@ public class PostStatusTask extends AuthenticatedTask {
 
 
     @Override
-    protected void processTask() {
+    protected void runTask() {
 
     }
 

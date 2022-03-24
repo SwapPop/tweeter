@@ -30,34 +30,34 @@ public abstract class BackgroundTask implements Runnable{
     @Override
     public final void run() {
         try {
-            processTask();
-            sendSuccessMessage();
+            runTask();
         } catch (Exception ex) {
             Log.e(LOG_TAG, ex.getMessage(), ex);
             sendExceptionMessage(ex);
         }
     }
 
-    protected abstract void processTask();
+    protected abstract void runTask();
 
-    private void sendSuccessMessage() {
+    public void sendSuccessMessage() {
         Bundle msgBundle = createBundle(true);
         loadSuccessBundle(msgBundle);
-        sendMessageFromBundle(msgBundle);
+        sendMessage(msgBundle);
     }
 
-    private void sendFailedMessage(String message) {
+    public void sendFailedMessage(String message) {
         Bundle msgBundle = createBundle(false);
         msgBundle.putString(MESSAGE_KEY, message);
-        sendMessageFromBundle(msgBundle);
+        sendMessage(msgBundle);
     }
 
-    private void sendExceptionMessage(Exception exception) {
+    public void sendExceptionMessage(Exception exception) {
         Bundle msgBundle = createBundle(false);
         msgBundle.putSerializable(EXCEPTION_KEY, exception);
-        sendMessageFromBundle(msgBundle);
+        sendMessage(msgBundle);
     }
 
+    //TODO: REMOVE THIS FROM EXISTENCE
     protected FakeData getFakeData() {
         return new FakeData();
     }
@@ -71,7 +71,7 @@ public abstract class BackgroundTask implements Runnable{
         return msgBundle;
     }
 
-    private void sendMessageFromBundle(Bundle msgBundle) {
+    private void sendMessage(Bundle msgBundle) {
         Message msg = Message.obtain();
         msg.setData(msgBundle);
 

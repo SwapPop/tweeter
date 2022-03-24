@@ -29,7 +29,7 @@ public class UnfollowTask extends AuthenticatedTask {
     }
 
     @Override
-    protected void processTask() {
+    protected void runTask() {
 
     }
 

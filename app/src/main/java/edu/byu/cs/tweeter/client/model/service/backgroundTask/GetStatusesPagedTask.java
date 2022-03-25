@@ -4,18 +4,25 @@ import android.os.Handler;
 
 import java.util.List;
 
+import edu.byu.cs.tweeter.client.model.service.FollowService;
+import edu.byu.cs.tweeter.client.model.service.StatusService;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.util.Pair;
 
-public class GetStatusesPagedTask extends PagedTask<Status>{
-    public GetStatusesPagedTask(Handler messageHandler, AuthToken authToken, User targetUser, int limit, Status lastItem) {
-        super(messageHandler, authToken, targetUser, limit, lastItem);
+public abstract class GetStatusesPagedTask extends PagedTask<Status>{
+    protected StatusService statusService;
+
+    private Status lastStatus;
+
+    public GetStatusesPagedTask(StatusService statusService, Handler messageHandler, AuthToken authToken, User targetUser, int limit, Status lastStatus) {
+        super(messageHandler, authToken, targetUser, limit);
+        this.statusService = statusService;
+        this.lastStatus = lastStatus;
     }
 
-    @Override
-    protected Pair<List<Status>, Boolean> getItems() {
-        return getFakeData().getPageOfStatus(getLastItem(), getLimit());
+    public Status getLastStatus() {
+        return lastStatus;
     }
 }

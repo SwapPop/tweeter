@@ -2,6 +2,7 @@ package edu.byu.cs.tweeter.client.model.service.backgroundTask;
 
 import android.os.Handler;
 
+import edu.byu.cs.tweeter.client.model.service.StatusService;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
@@ -13,8 +14,13 @@ public class GetStoryTask extends GetStatusesPagedTask {
     private static final String LOG_TAG = "GetStoryTask";
 //    public static final String STATUSES_KEY = "story";
 
-    public GetStoryTask(AuthToken authToken, User targetUser, int limit, Status lastStatus,
+    public GetStoryTask(StatusService statusService, AuthToken authToken, User targetUser, int limit, Status lastStatus,
                         Handler messageHandler) {
-        super(messageHandler, authToken, targetUser, limit, lastStatus);
+        super(statusService, messageHandler, authToken, targetUser, limit, lastStatus);
+    }
+
+    @Override
+    protected void runTask() {
+
     }
 }

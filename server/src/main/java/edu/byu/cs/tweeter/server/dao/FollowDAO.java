@@ -2,16 +2,19 @@ package edu.byu.cs.tweeter.server.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
 import edu.byu.cs.tweeter.model.net.request.GetFollowersCountRequest;
 import edu.byu.cs.tweeter.model.net.request.GetFollowingCountRequest;
+import edu.byu.cs.tweeter.model.net.request.IsFollowerRequest;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
 import edu.byu.cs.tweeter.model.net.response.GetFollowersCountResponse;
 import edu.byu.cs.tweeter.model.net.response.GetFollowingCountResponse;
+import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
 import edu.byu.cs.tweeter.util.FakeData;
 
 /**
@@ -46,6 +49,18 @@ public class FollowDAO {
         // TODO: uses the dummy data.  Replace with a real implementation.
         assert alias != null;
         return getDummyFollowers().size();
+    }
+
+    public IsFollowerResponse isFollower(IsFollowerRequest request) {
+        boolean isFollower = getDummyIsFollower(request.getFollower(), request.getFollowee());
+        return new IsFollowerResponse(isFollower);
+    }
+
+    private boolean getDummyIsFollower(String follower, String followee) {
+        // TODO: uses random bool.  Replace with a real implementation.
+        assert follower != null;
+        assert followee != null;
+        return new Random().nextInt() > 0;
     }
 
     /**

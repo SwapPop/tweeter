@@ -33,8 +33,13 @@ public class FollowService extends Service{
     }
 
     public void isFollower(AuthToken currUserAuthToken, User currentUser, User selectedUser, IsFollowerObserver isFollowerObserver){
-        IsFollowerTask isFollowerTask = new IsFollowerTask(currUserAuthToken, currentUser, selectedUser, new IsFollowerHandler(isFollowerObserver));
+        IsFollowerTask isFollowerTask = getIsFollowerTask(currUserAuthToken, currentUser, selectedUser, isFollowerObserver);
         executeTask(isFollowerTask);
+    }
+
+    @NonNull
+    private IsFollowerTask getIsFollowerTask(AuthToken currUserAuthToken, User currentUser, User selectedUser, IsFollowerObserver isFollowerObserver) {
+        return new IsFollowerTask(this, currUserAuthToken, currentUser, selectedUser, new IsFollowerHandler(isFollowerObserver));
     }
 
     public void follow(AuthToken currUserAuthToken, User selectedUser, SimpleNotificationObserver followObserver){

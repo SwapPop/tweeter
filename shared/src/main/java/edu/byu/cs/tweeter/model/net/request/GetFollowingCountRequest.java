@@ -2,7 +2,7 @@ package edu.byu.cs.tweeter.model.net.request;
 
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 
-public class GetUserRequest {
+public class GetFollowingCountRequest {
 
     private String alias;
     private AuthToken authToken;
@@ -10,9 +10,9 @@ public class GetUserRequest {
     /**
      * Allows construction of the object from Json. Private so it won't be called in normal code.
      */
-    private GetUserRequest() {}
+    private GetFollowingCountRequest() {}
 
-    public GetUserRequest(String alias, AuthToken authToken) {
+    public GetFollowingCountRequest(String alias, AuthToken authToken) {
         this.alias = alias;
         this.authToken = authToken;
     }

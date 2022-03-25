@@ -6,8 +6,12 @@ import java.util.List;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowersCountRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowingCountRequest;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
+import edu.byu.cs.tweeter.model.net.response.GetFollowersCountResponse;
+import edu.byu.cs.tweeter.model.net.response.GetFollowingCountResponse;
 import edu.byu.cs.tweeter.util.FakeData;
 
 /**
@@ -19,13 +23,29 @@ public class FollowDAO {
      * Gets the count of users from the database that the user specified is following. The
      * current implementation uses generated data and doesn't actually access a database.
      *
-     * @param follower the User whose count of how many following is desired.
+     * @param request the User whose count of how many following is desired.
      * @return said count.
      */
-    public Integer getFolloweeCount(User follower) {
+    public GetFollowingCountResponse getFollowingCount(GetFollowingCountRequest request) {
+        int count = getDummyFollowingCountResponse(request.getAlias());
+        return new GetFollowingCountResponse(count);
+    }
+
+    private Integer getDummyFollowingCountResponse(String alias) {
         // TODO: uses the dummy data.  Replace with a real implementation.
-        assert follower != null;
+        assert alias != null;
         return getDummyFollowees().size();
+    }
+
+    public GetFollowersCountResponse getFollowersCount(GetFollowersCountRequest request) {
+        int count = getDummyFollowersCountResponse(request.getAlias());
+        return new GetFollowersCountResponse(count);
+    }
+
+    private Integer getDummyFollowersCountResponse(String alias) {
+        // TODO: uses the dummy data.  Replace with a real implementation.
+        assert alias != null;
+        return getDummyFollowers().size();
     }
 
     /**

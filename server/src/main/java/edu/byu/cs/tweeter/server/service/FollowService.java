@@ -2,8 +2,12 @@ package edu.byu.cs.tweeter.server.service;
 
 import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowersCountRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowingCountRequest;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
+import edu.byu.cs.tweeter.model.net.response.GetFollowersCountResponse;
+import edu.byu.cs.tweeter.model.net.response.GetFollowingCountResponse;
 import edu.byu.cs.tweeter.server.dao.FollowDAO;
 
 /**
@@ -26,7 +30,7 @@ public class FollowService {
         } else if(request.getLimit() <= 0) {
             throw new RuntimeException("[BadRequest] Request needs to have a positive limit");
         }
-        return getFollowingDAO().getFollowees(request);
+        return getFollowDAO().getFollowees(request);
     }
 
     public FollowersResponse getFollowers(FollowersRequest request) {
@@ -35,7 +39,25 @@ public class FollowService {
         } else if(request.getLimit() <= 0) {
             throw new RuntimeException("[BadRequest] Request needs to have a positive limit");
         }
-        return getFollowersDAO().getFollowers(request);
+        return getFollowDAO().getFollowers(request);
+    }
+
+    public GetFollowingCountResponse getFollowingCount(GetFollowingCountRequest request) {
+        if(request.getAlias() == null) {
+            throw new RuntimeException("[BadRequest] Request needs to have a target user alias");
+        } else if(request.getAuthToken() == null) {
+            throw new RuntimeException("[BadRequest] Request needs to have an AuthToken");
+        }
+        return getFollowDAO().getFollowingCount(request);
+    }
+
+    public GetFollowersCountResponse getFollowersCount(GetFollowersCountRequest request) {
+        if(request.getAlias() == null) {
+            throw new RuntimeException("[BadRequest] Request needs to have a target user alias");
+        } else if(request.getAuthToken() == null) {
+            throw new RuntimeException("[BadRequest] Request needs to have an AuthToken");
+        }
+        return getFollowDAO().getFollowersCount(request);
     }
 
     /**
@@ -45,8 +67,7 @@ public class FollowService {
      *
      * @return the instance.
      */
-    FollowDAO getFollowingDAO() {
+    FollowDAO getFollowDAO() {
         return new FollowDAO();
     }
-    FollowDAO getFollowersDAO() { return new FollowDAO();}
 }

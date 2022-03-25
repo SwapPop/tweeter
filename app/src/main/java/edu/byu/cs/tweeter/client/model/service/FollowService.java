@@ -54,30 +54,36 @@ public class FollowService extends Service{
     //ExecutorService executor = Executors.newFixedThreadPool(2); to execute both?
 
     public void getFollowersCount(AuthToken currUserAuthToken, User selectedUser, CountObserver getFollowersCountObserver) {
-        GetFollowersCountTask followersCountTask = new GetFollowersCountTask(currUserAuthToken,
-                selectedUser, new CountHandler(getFollowersCountObserver));
+        GetFollowersCountTask followersCountTask = getFollowersCountTask(currUserAuthToken, selectedUser, getFollowersCountObserver);
         executeTask(followersCountTask);
     }
 
     //getFollowingCount
 
     public void getFollowingCount(AuthToken currUserAuthToken, User selectedUser, CountObserver getFollowingCountObserver) {
-        GetFollowingCountTask followingCountTask = new GetFollowingCountTask(currUserAuthToken,
-                selectedUser, new CountHandler(getFollowingCountObserver));
+        GetFollowingCountTask followingCountTask = getFollowingCountTask(currUserAuthToken, selectedUser, getFollowingCountObserver);
         executeTask(followingCountTask);
     }
 
 
     @NonNull
     private GetFollowingTask getGetFollowingTask(AuthToken currUserAuthToken, User user, int pageSize, User lastFollowee, PagedObserver<User> getFollowingObserver) {
-        return new GetFollowingTask(this, currUserAuthToken,
-                user, pageSize, lastFollowee, new PagedHandler<User>(getFollowingObserver));
+        return new GetFollowingTask(this, currUserAuthToken, user, pageSize, lastFollowee, new PagedHandler<User>(getFollowingObserver));
     }
 
     @NonNull
     private GetFollowersTask getGetFollowersTask(AuthToken currUserAuthToken, User user, int pageSize, User lastFollower, PagedObserver<User> getFollowersObserver) {
-        return new GetFollowersTask(this, currUserAuthToken,
-                user, pageSize, lastFollower, new PagedHandler<User>(getFollowersObserver));
+        return new GetFollowersTask(this, currUserAuthToken, user, pageSize, lastFollower, new PagedHandler<User>(getFollowersObserver));
+    }
+
+    @NonNull
+    private GetFollowersCountTask getFollowersCountTask(AuthToken currUserAuthToken, User selectedUser, CountObserver getFollowersCountObserver) {
+        return new GetFollowersCountTask(this, currUserAuthToken, selectedUser, new CountHandler(getFollowersCountObserver));
+    }
+
+    @NonNull
+    private GetFollowingCountTask getFollowingCountTask(AuthToken currUserAuthToken, User selectedUser, CountObserver getFollowingCountObserver) {
+        return new GetFollowingCountTask(this, currUserAuthToken, selectedUser, new CountHandler(getFollowingCountObserver));
     }
 
 }

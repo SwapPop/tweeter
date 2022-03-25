@@ -4,9 +4,11 @@ import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.GetUserRequest;
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
+import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
 import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
 import edu.byu.cs.tweeter.model.net.response.AuthResponse;
 import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
+import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
 import edu.byu.cs.tweeter.server.dao.StatusDAO;
 import edu.byu.cs.tweeter.server.dao.UserDAO;
 import edu.byu.cs.tweeter.util.FakeData;
@@ -22,6 +24,15 @@ public class UserService {
 
         // TODO: Generates dummy data. Replace with a real implementation.
         return getUserDAO().login(request);
+    }
+
+    public LogoutResponse logout(LogoutRequest request) {
+        if(request.getAuthToken() == null){
+            throw new RuntimeException("[BadRequest] Missing an authToken");
+        }
+
+        // TODO: Generates dummy data. Replace with a real implementation.
+        return getUserDAO().logout(request);
     }
 
     public AuthResponse register(RegisterRequest request) {

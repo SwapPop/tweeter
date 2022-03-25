@@ -36,9 +36,10 @@ public class UserService extends Service{
     }
 
     public void logout(SimpleNotificationObserver logoutObserver){
-        LogoutTask logoutTask = new LogoutTask(Cache.getInstance().getCurrUserAuthToken(), new SimpleNotificationHandler(logoutObserver));
+        LogoutTask logoutTask = getLogoutTask(logoutObserver);
         executeTask(logoutTask);
     }
+
 
     /**
      * Returns an instance of {@link LoginTask}. Allows mocking of the LoginTask class for
@@ -63,5 +64,10 @@ public class UserService extends Service{
     @NonNull
     private GetUserTask getGetUserTask(AuthToken currUserAuthToken, String userAlias, GetUserObserver getUserObserver) {
         return new GetUserTask(this, currUserAuthToken, userAlias, new GetUserHandler(getUserObserver));
+    }
+
+    @NonNull
+    private LogoutTask getLogoutTask(SimpleNotificationObserver logoutObserver) {
+        return new LogoutTask(this, Cache.getInstance().getCurrUserAuthToken(), new SimpleNotificationHandler(logoutObserver));
     }
 }

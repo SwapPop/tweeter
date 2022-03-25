@@ -1,5 +1,7 @@
 package edu.byu.cs.tweeter.client.model.service;
 
+import androidx.annotation.NonNull;
+
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.LoginTask;
@@ -19,7 +21,7 @@ public class UserService extends Service{
     }
 
     public void getUser(AuthToken currUserAuthToken, String userAlias, GetUserObserver getUserObserver) {
-        GetUserTask getUserTask = new GetUserTask(currUserAuthToken, userAlias, new GetUserHandler(getUserObserver));
+        GetUserTask getUserTask = getGetUserTask(currUserAuthToken, userAlias, getUserObserver);
         executeTask(getUserTask);
     }
 
@@ -56,5 +58,10 @@ public class UserService extends Service{
      */
     RegisterTask getRegisterTask(String firstName, String lastName, String username, String password, String imageBytesBase64, AuthObserver observer) {
         return new RegisterTask(this, firstName, lastName, username, password, imageBytesBase64, new AuthHandler(observer));
+    }
+
+    @NonNull
+    private GetUserTask getGetUserTask(AuthToken currUserAuthToken, String userAlias, GetUserObserver getUserObserver) {
+        return new GetUserTask(this, currUserAuthToken, userAlias, new GetUserHandler(getUserObserver));
     }
 }

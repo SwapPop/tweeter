@@ -28,12 +28,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import edu.byu.cs.client.R;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowersTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.presenter.FollowersPresenter;
-import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
-import edu.byu.cs.tweeter.client.presenter.PagedPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
 
@@ -148,11 +145,8 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    GetUserTask getUserTask = new GetUserTask(Cache.getInstance().getCurrUserAuthToken(),
-                            userAlias.getText().toString(), new GetUserHandler());
-                    ExecutorService executor = Executors.newSingleThreadExecutor();
-                    executor.execute(getUserTask);
-                    Toast.makeText(getContext(), "Getting user's profile...", Toast.LENGTH_LONG).show();
+                    presenter.getUser(userAlias.getText().toString());
+//                    Toast.makeText(getContext(), "Getting user's profile...", Toast.LENGTH_LONG).show();
                 }
             });
         }

@@ -21,7 +21,6 @@ public class GetFollowersTask extends GetUsersPagedTask {
     static final String URL_PATH = "/getfollowers";
 
     private static final String LOG_TAG = "GetFollowersTask";
-//    public static final String FOLLOWERS_KEY = "followers";
     public GetFollowersTask(FollowService followService, AuthToken authToken, User targetUser, int limit, User lastFollower,
                             Handler messageHandler) {
         super(followService, messageHandler, authToken, targetUser, limit, lastFollower);

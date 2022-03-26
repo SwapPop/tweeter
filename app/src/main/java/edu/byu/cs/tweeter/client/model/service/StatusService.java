@@ -27,9 +27,14 @@ public class StatusService extends Service {
     }
 
     public void postStatus(Status newStatus, SimpleNotificationObserver postStatusObserver) {
-        PostStatusTask statusTask = new PostStatusTask(Cache.getInstance().getCurrUserAuthToken(),
-                newStatus, new SimpleNotificationHandler(postStatusObserver));
+        PostStatusTask statusTask = getPostStatusTask(newStatus, postStatusObserver);
         executeTask(statusTask);
+    }
+
+    @NonNull
+    private PostStatusTask getPostStatusTask(Status newStatus, SimpleNotificationObserver postStatusObserver) {
+        return new PostStatusTask(this, Cache.getInstance().getCurrUserAuthToken(),
+                newStatus, new SimpleNotificationHandler(postStatusObserver));
     }
 
 

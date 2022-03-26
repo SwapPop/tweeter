@@ -1,8 +1,12 @@
 package edu.byu.cs.tweeter.server.service;
 
 import edu.byu.cs.tweeter.model.net.request.FeedRequest;
+import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
+import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.request.StoryRequest;
 import edu.byu.cs.tweeter.model.net.response.FeedResponse;
+import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
+import edu.byu.cs.tweeter.model.net.response.PostStatusResponse;
 import edu.byu.cs.tweeter.model.net.response.StoryResponse;
 import edu.byu.cs.tweeter.server.dao.StatusDAO;
 
@@ -17,7 +21,7 @@ public class StatusService {
         } else if(request.getLimit() <= 0) {
             throw new RuntimeException("[BadRequest] Request needs to have a positive limit");
         }
-        return getStoryDAO().getStory(request);
+        return getStatusDAO().getStory(request);
     }
 
     public FeedResponse getFeed(FeedRequest request) {
@@ -26,11 +30,21 @@ public class StatusService {
         } else if(request.getLimit() <= 0) {
             throw new RuntimeException("[BadRequest] Request needs to have a positive limit");
         }
-        return getFeedDAO().getFeed(request);
+        return getStatusDAO().getFeed(request);
     }
 
-    StatusDAO getStoryDAO() {
+    public PostStatusResponse postStatus(PostStatusRequest request) {
+        if(request.getAuthToken() == null){
+            throw new RuntimeException("[BadRequest] Missing an authToken");
+        } else if(request.getStatus() == null){
+            throw new RuntimeException("[BadRequest] Missing a status");
+        }
+
+        // TODO: Generates dummy data. Replace with a real implementation.
+        return getStatusDAO().postStatus(request);
+    }
+
+    StatusDAO getStatusDAO() {
         return new StatusDAO();
     }
-    StatusDAO getFeedDAO() { return new StatusDAO();}
 }

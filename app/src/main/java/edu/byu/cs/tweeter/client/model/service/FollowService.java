@@ -43,14 +43,12 @@ public class FollowService extends Service{
     }
 
     public void follow(AuthToken currUserAuthToken, User selectedUser, SimpleNotificationObserver followObserver){
-        FollowTask followTask = new FollowTask(currUserAuthToken,
-                selectedUser, new SimpleNotificationHandler(followObserver));
+        FollowTask followTask = getFollowTask(currUserAuthToken, selectedUser, followObserver);
         executeTask(followTask);
     }
 
     public void unfollow(AuthToken currUserAuthToken, User selectedUser, SimpleNotificationObserver unfollowObserver){
-        UnfollowTask unfollowTask = new UnfollowTask(currUserAuthToken,
-                selectedUser, new SimpleNotificationHandler(unfollowObserver));
+        UnfollowTask unfollowTask = getUnfollowTask(currUserAuthToken, selectedUser, unfollowObserver);
         executeTask(unfollowTask);
 
     }
@@ -89,6 +87,16 @@ public class FollowService extends Service{
     @NonNull
     private GetFollowingCountTask getFollowingCountTask(AuthToken currUserAuthToken, User selectedUser, CountObserver getFollowingCountObserver) {
         return new GetFollowingCountTask(this, currUserAuthToken, selectedUser, new CountHandler(getFollowingCountObserver));
+    }
+
+    @NonNull
+    private UnfollowTask getUnfollowTask(AuthToken currUserAuthToken, User selectedUser, SimpleNotificationObserver unfollowObserver) {
+        return new UnfollowTask(this, currUserAuthToken, selectedUser, new SimpleNotificationHandler(unfollowObserver));
+    }
+
+    @NonNull
+    private FollowTask getFollowTask(AuthToken currUserAuthToken, User selectedUser, SimpleNotificationObserver followObserver) {
+        return new FollowTask(this, currUserAuthToken, selectedUser, new SimpleNotificationHandler(followObserver));
     }
 
 }

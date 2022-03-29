@@ -13,6 +13,9 @@ dependencies {
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
     implementation project(path: ':shared')
 
+    implementation 'com.amazonaws:aws-java-sdk-core:1.12.186'
+    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.12.186'
+
     // Testing related dependencies
 
     // requires test/resources/mockito-extensions/org.mockito.plugins.MockMaker to have content "mock-maker-inline"

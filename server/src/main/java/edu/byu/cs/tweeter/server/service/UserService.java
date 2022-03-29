@@ -9,6 +9,7 @@ import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
 import edu.byu.cs.tweeter.model.net.response.AuthResponse;
 import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
 import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
 import edu.byu.cs.tweeter.server.dao.StatusDAO;
 import edu.byu.cs.tweeter.server.dao.UserDAO;
 import edu.byu.cs.tweeter.util.FakeData;
@@ -22,7 +23,6 @@ public class UserService {
             throw new RuntimeException("[BadRequest] Missing a password");
         }
 
-        // TODO: Generates dummy data. Replace with a real implementation.
         return getUserDAO().login(request);
     }
 
@@ -31,7 +31,6 @@ public class UserService {
             throw new RuntimeException("[BadRequest] Missing an authToken");
         }
 
-        // TODO: Generates dummy data. Replace with a real implementation.
         return getUserDAO().logout(request);
     }
 
@@ -48,20 +47,29 @@ public class UserService {
             throw new RuntimeException("[BadRequest] Missing an image");
         }
 
-        // TODO: Generates dummy data. Replace with a real implementation.
-        return getUserDAO().register(request);
+        boolean available = getUserDAO().availableAlias(request.getUsername());
+        if (!available) {
+            return new AuthResponse("Alias already taken!");
+        }
+        AuthResponse response = getUserDAO().register(request);
+        if(response.isSuccess()) {
+            getAuthTokenDAO().addToken(response);
+        } else {
+            return new AuthResponse("Failed to register");
+        }
+        return response;
     }
 
     public GetUserResponse getUser(GetUserRequest request) {
         if (request.getAlias() == null) {
             throw new RuntimeException("[BadRequest] Missing an alias");
         }
-        // TODO: Generates dummy data. Replace with a real implementation.
         return getUserDAO().findUser(request);
     }
 
     UserDAO getUserDAO() {
         return new UserDAO();
     }
+    AuthTokenDAO getAuthTokenDAO() {return new AuthTokenDAO();}
 
 }

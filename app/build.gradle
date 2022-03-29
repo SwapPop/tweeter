@@ -20,6 +20,9 @@ android {
         sourceCompatibility = 11
         targetCompatibility = 11
     }
+    packagingOptions {
+        resources.excludes.add("META-INF/*")
+    }
 }
 
 dependencies {

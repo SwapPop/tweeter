@@ -43,10 +43,6 @@ public class StatusServiceTest {
 
         // Prepare the countdown latch
         resetCountDownLatch();
-
-        if(Looper.myLooper() == null) {
-            Looper.prepare();
-        }
     }
 
     private void resetCountDownLatch() {

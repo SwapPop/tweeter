@@ -10,22 +10,20 @@ import org.mockito.Mockito;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import edu.byu.cs.tweeter.client.model.net.ServerFacade;
-import edu.byu.cs.tweeter.client.model.service.FollowService;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowingTask;
-import edu.byu.cs.tweeter.client.model.service.handler.PagedHandler;
 import edu.byu.cs.tweeter.client.model.service.observer.PagedObserver;
+import edu.byu.cs.tweeter.client.model.service.observer.ServiceObserver;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
+import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.util.FakeData;
 
-public class FollowServiceTest {
+public class StatusServiceTest {
 
     private User currentUser;
     private AuthToken currentAuthToken;
 
-    private FollowService followServiceSpy;
-    private FollowServiceObserver observer;
+    private StatusService statusServiceSpy;
+    private StatusServiceObserver observer;
 
     private CountDownLatch countDownLatch;
 
@@ -35,17 +33,20 @@ public class FollowServiceTest {
      */
     @Before
     public void setup() {
-
         currentUser = new User("FirstName", "LastName", null);
         currentAuthToken = new AuthToken();
 
-        followServiceSpy = Mockito.spy(new FollowService());
+        statusServiceSpy = Mockito.spy(new StatusService());
 
         // Setup an observer for the FollowService
-        observer = new FollowServiceObserver();
+        observer = new StatusServiceObserver();
 
         // Prepare the countdown latch
         resetCountDownLatch();
+
+        if(Looper.myLooper() == null) {
+            Looper.prepare();
+        }
     }
 
     private void resetCountDownLatch() {
@@ -58,24 +59,24 @@ public class FollowServiceTest {
     }
 
     /**
-     * A {@link PagedObserver} implementation that can be used to get the values
+     * A {@link PagedObserver<Status>} implementation that can be used to get the values
      * eventually returned by an asynchronous call on the {@link FollowService}. Counts down
      * on the countDownLatch so tests can wait for the background thread to call a method on the
      * observer.
      */
-    private class FollowServiceObserver implements PagedObserver<User> {
+    private class StatusServiceObserver implements PagedObserver<Status> {
 
         private boolean success;
         private String message;
-        private List<User> followees;
+        private List<Status> statuses;
         private boolean hasMorePages;
         private Exception exception;
 
         @Override
-        public void handleSuccess(List<User> followees, boolean hasMorePages) {
+        public void handleSuccess(List<Status> statuses, boolean hasMorePages) {
             this.success = true;
             this.message = null;
-            this.followees = followees;
+            this.statuses = statuses;
             this.hasMorePages = hasMorePages;
             this.exception = null;
 
@@ -86,7 +87,7 @@ public class FollowServiceTest {
         public void handleFailure(String message) {
             this.success = false;
             this.message = message;
-            this.followees = null;
+            this.statuses = null;
             this.hasMorePages = false;
             this.exception = null;
 
@@ -97,7 +98,7 @@ public class FollowServiceTest {
         public void handleException(Exception exception) {
             this.success = false;
             this.message = null;
-            this.followees = null;
+            this.statuses = null;
             this.hasMorePages = false;
             this.exception = exception;
 
@@ -112,8 +113,8 @@ public class FollowServiceTest {
             return message;
         }
 
-        public List<User> getFollowees() {
-            return followees;
+        public List<Status> getStatuses() {
+            return statuses;
         }
 
         public boolean getHasMorePages() {
@@ -126,49 +127,21 @@ public class FollowServiceTest {
     }
 
     /**
-     * Verify that for successful requests, the {@link FollowService#getFollowing}
-     * asynchronous method eventually returns the same result as the {@link ServerFacade}.
+     * Verify that for successful requests, the {@link StatusService#getStory}
+     * asynchronous method eventually returns the same result as the {@link edu.byu.cs.tweeter.client.model.net.ServerFacade}.
      */
     @Test
-    public void testGetFollowees_validRequest_correctResponse() throws InterruptedException {
-//        Mockito.doReturn(new GetFollowingTask(followServiceSpy, currentAuthToken, currentUser, 3, null, new PagedHandler<User>(observer))).when(followServiceSpy).getGetFollowingTask(currentAuthToken, currentUser, 3, null, observer);
-        followServiceSpy.getFollowing(currentAuthToken, currentUser, 3, null, observer);
+    public void testGetStory_validRequest_correctResponse() throws InterruptedException {
+        statusServiceSpy.getStory(currentAuthToken, currentUser, 3, null, observer);
         awaitCountDownLatch();
 
-        List<User> expectedFollowees = new FakeData().getFakeUsers().subList(0, 3);
+        List<Status> expectedStory = new FakeData().getFakeStatuses().subList(0, 3);
         Assert.assertTrue(observer.isSuccess());
         Assert.assertNull(observer.getMessage());
-        Assert.assertEquals(expectedFollowees, observer.getFollowees());
+        for(int i = 0; i < 3; i++) {
+            Assert.assertEquals(expectedStory.get(i).getPost(), observer.getStatuses().get(i).getPost());
+        }
         Assert.assertTrue(observer.getHasMorePages());
         Assert.assertNull(observer.getException());
-    }
-
-    /**
-     * Verify that for successful requests, the the {@link FollowService#getFollowing}
-     * method loads the profile image of each user included in the result.
-     */
-    @Test
-    public void testGetFollowees_validRequest_loadsProfileImages() throws InterruptedException {
-        followServiceSpy.getFollowing(currentAuthToken, currentUser, 3, null, observer);
-        awaitCountDownLatch();
-
-        List<User> followees = observer.getFollowees();
-        Assert.assertTrue(followees.size() > 0);
-    }
-
-    /**
-     * Verify that for unsuccessful requests, the the {@link FollowService#getFollowing}
-     * method returns the same failure response as the server facade.
-     */
-    @Test
-    public void testGetFollowees_invalidRequest_returnsNoFollowees() throws InterruptedException {
-        followServiceSpy.getFollowing(null, null, 0, null, observer);
-        awaitCountDownLatch();
-
-        Assert.assertFalse(observer.isSuccess());
-        Assert.assertNull(observer.getMessage());
-        Assert.assertNull(observer.getFollowees());
-        Assert.assertFalse(observer.getHasMorePages());
-        Assert.assertNotNull(observer.getException());
     }
 }

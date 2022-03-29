@@ -27,7 +27,7 @@ public class FollowingPresenter extends PagedPresenter<User>{
 
     @Override
     protected void getServiceItems(User user) {
-        followService.getFollowing(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastItem, new PagedTemplateObserver());
+        getFollowService().getFollowing(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastItem, new PagedTemplateObserver());
     }
 
     @Override

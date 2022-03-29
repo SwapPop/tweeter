@@ -70,7 +70,7 @@ public class FollowService extends Service{
 
 
     @NonNull
-    private GetFollowingTask getGetFollowingTask(AuthToken currUserAuthToken, User user, int pageSize, User lastFollowee, PagedObserver<User> getFollowingObserver) {
+    public GetFollowingTask getGetFollowingTask(AuthToken currUserAuthToken, User user, int pageSize, User lastFollowee, PagedObserver<User> getFollowingObserver) {
         return new GetFollowingTask(this, currUserAuthToken, user, pageSize, lastFollowee, new PagedHandler<User>(getFollowingObserver));
     }
 

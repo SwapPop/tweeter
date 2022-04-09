@@ -1,7 +1,8 @@
 package edu.byu.cs.tweeter.server.service;
 
-import edu.byu.cs.tweeter.model.domain.AuthToken;
-import edu.byu.cs.tweeter.model.domain.User;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import edu.byu.cs.tweeter.model.net.request.GetUserRequest;
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
@@ -10,11 +11,18 @@ import edu.byu.cs.tweeter.model.net.response.AuthResponse;
 import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
 import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
 import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
-import edu.byu.cs.tweeter.server.dao.StatusDAO;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAODynamoDB;
+import edu.byu.cs.tweeter.server.dao.DAOFactoryProvider;
 import edu.byu.cs.tweeter.server.dao.UserDAO;
-import edu.byu.cs.tweeter.util.FakeData;
+import edu.byu.cs.tweeter.server.dao.UserDAODynamoDB;
 
 public class UserService {
+
+    DAOFactoryProvider daoProvider;
+
+    public UserService() {
+        this.daoProvider = new DAOFactoryProvider();
+    }
 
     public AuthResponse login(LoginRequest request) {
         if(request.getUsername() == null){
@@ -23,7 +31,16 @@ public class UserService {
             throw new RuntimeException("[BadRequest] Missing a password");
         }
 
-        return getUserDAO().login(request);
+        String hashedPassword = hashPassword(request.getPassword());
+        request.setPassword(hashedPassword);
+
+        AuthResponse response = getUserDAO().login(request);
+        if(response.isSuccess()) {
+            getAuthTokenDAO().addToken(response);
+        } else {
+            return new AuthResponse("Failed to login");
+        }
+        return response;
     }
 
     public LogoutResponse logout(LogoutRequest request) {
@@ -51,6 +68,13 @@ public class UserService {
         if (!available) {
             return new AuthResponse("Alias already taken!");
         }
+
+        String hashedPassword = hashPassword(request.getPassword());
+        if (hashedPassword.equals("FAILED TO HASH")) {
+            return new AuthResponse("Password failed to hash, please try again");
+        }
+        request.setPassword(hashedPassword);
+
         AuthResponse response = getUserDAO().register(request);
         if(response.isSuccess()) {
             getAuthTokenDAO().addToken(response);
@@ -67,9 +91,25 @@ public class UserService {
         return getUserDAO().findUser(request);
     }
 
-    UserDAO getUserDAO() {
-        return new UserDAO();
+    private static String hashPassword(String passwordToHash) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(passwordToHash.getBytes());
+            byte[] bytes = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte aByte : bytes) {
+                sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return "FAILED TO HASH";
     }
-    AuthTokenDAO getAuthTokenDAO() {return new AuthTokenDAO();}
+
+    UserDAO getUserDAO() {
+        return daoProvider.getDaoFactory().getUserDAO();
+    }
+    AuthTokenDAO getAuthTokenDAO() {return daoProvider.getDaoFactory().getAuthTokenDAO();}
 
 }

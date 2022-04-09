@@ -1,19 +1,24 @@
 package edu.byu.cs.tweeter.server.service;
 
 import edu.byu.cs.tweeter.model.net.request.FeedRequest;
-import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
 import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.request.StoryRequest;
 import edu.byu.cs.tweeter.model.net.response.FeedResponse;
-import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
 import edu.byu.cs.tweeter.model.net.response.PostStatusResponse;
 import edu.byu.cs.tweeter.model.net.response.StoryResponse;
+import edu.byu.cs.tweeter.server.dao.DAOFactoryProvider;
 import edu.byu.cs.tweeter.server.dao.StatusDAO;
 
 /**
  * Contains the business logic for getting the users a user is following.
  */
 public class StatusService {
+
+    DAOFactoryProvider daoProvider;
+
+    public StatusService() {
+        this.daoProvider = new DAOFactoryProvider();
+    }
 
     public StoryResponse getStory(StoryRequest request) {
         if(request.getUserAlias() == null) {
@@ -45,6 +50,6 @@ public class StatusService {
     }
 
     StatusDAO getStatusDAO() {
-        return new StatusDAO();
+        return daoProvider.getDaoFactory().getStatusDAO();
     }
 }

@@ -1,26 +1,5 @@
 package edu.byu.cs.tweeter.server.dao;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import edu.byu.cs.tweeter.model.domain.AuthToken;
-import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.GetUserRequest;
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
@@ -28,133 +7,15 @@ import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
 import edu.byu.cs.tweeter.model.net.response.AuthResponse;
 import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
 import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
-import edu.byu.cs.tweeter.util.FakeData;
 
-public class UserDAO {
+public interface UserDAO {
+    AuthResponse login(LoginRequest request);
 
-    public AuthResponse login(LoginRequest request) {
-        User user = getDummyUser();
-        AuthToken authToken = getDummyAuthToken();
-        return new AuthResponse(user, authToken);
-    }
+    LogoutResponse logout(LogoutRequest request);
 
-    public LogoutResponse logout(LogoutRequest request) {
-        return new LogoutResponse();
-    }
+    AuthResponse register(RegisterRequest request);
 
-    public AuthResponse register(RegisterRequest request) {
-        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+    GetUserResponse findUser(GetUserRequest request);
 
-        DynamoDB dynamoDB = new DynamoDB(client);
-
-        Table userTable = dynamoDB.getTable("users");
-
-        //hash password
-
-        //create authToken
-        //Date().getTime()
-        AuthToken authToken = new AuthToken(UUID.randomUUID().toString(), new Date().toString() );
-
-        //put authToken into authToken table if register successful
-
-        userTable.putItem(new Item().withPrimaryKey("alias", request.getUsername())
-                .withString("password", hashPassword(request.getPassword()))
-                .withString("firstName", request.getFirstName())
-                .withString("lastName", request.getLastName())
-                .withString("image", request.getImage()));
-
-        User user = new User(request.getFirstName(), request.getLastName(), request.getUsername(), request.getImage());
-
-        return new AuthResponse(user, authToken);
-
-    }
-
-    public GetUserResponse findUser(GetUserRequest request){
-        User user = getThisUser(request.getAlias());
-        return new GetUserResponse(user);
-    }
-
-    public boolean availableAlias(String alias) {
-        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
-        DynamoDB dynamoDB = new DynamoDB(client);
-        Table userTable = dynamoDB.getTable("users");
-
-        Map<String, String> nameMap = new HashMap<String, String>();
-        nameMap.put("Alias", "Alias");
-
-        Map<String, Object> valueMap = new HashMap<String, Object>();
-        valueMap.put("alias", alias);
-
-        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("Alias = alias").withNameMap(nameMap)
-                .withValueMap(valueMap);
-
-        ItemCollection<QueryOutcome> items = null;
-        Iterator<Item> iterator = null;
-        Item item = null;
-
-        try {
-            items = userTable.query(querySpec);
-            iterator = items.iterator();
-            while (iterator.hasNext()) {
-                item = iterator.next();
-                if(item.getString("Alias").equals(alias)) {
-                    return false;
-                }
-            }
-        }
-        catch (Exception e) {
-            System.err.println(e.getMessage());
-        }
-        return true;
-    }
-
-    private static String hashPassword(String passwordToHash) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(passwordToHash.getBytes());
-            byte[] bytes = md.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte aByte : bytes) {
-                sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        return "FAILED TO HASH";
-    }
-
-    /**
-     * Returns the dummy user to be returned by the login operation.
-     * This is written as a separate method to allow mocking of the dummy user.
-     *
-     * @return a dummy user.
-     */
-    public User getDummyUser() {
-        return getFakeData().getFirstUser();
-    }
-
-    User getThisUser(String alias) {
-        return getFakeData().findUserByAlias(alias);
-    }
-
-    /**
-     * Returns the dummy auth token to be returned by the login operation.
-     * This is written as a separate method to allow mocking of the dummy auth token.
-     *
-     * @return a dummy auth token.
-     */
-    public AuthToken getDummyAuthToken() {
-        return getFakeData().getAuthToken();
-    }
-
-    /**
-     * Returns the {@link FakeData} object used to generate dummy users and auth tokens.
-     * This is written as a separate method to allow mocking of the {@link FakeData}.
-     *
-     * @return a {@link FakeData} instance.
-     */
-    FakeData getFakeData() {
-        return new FakeData();
-    }
+    boolean availableAlias(String username);
 }

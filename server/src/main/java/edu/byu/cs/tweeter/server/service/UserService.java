@@ -10,8 +10,6 @@ import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
 import edu.byu.cs.tweeter.model.net.response.AuthResponse;
 import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
 import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
-import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
-import edu.byu.cs.tweeter.server.dao.AuthTokenDAODynamoDB;
 import edu.byu.cs.tweeter.server.dao.DAOFactoryProvider;
 import edu.byu.cs.tweeter.server.dao.UserDAO;
 import edu.byu.cs.tweeter.server.dao.UserDAODynamoDB;
@@ -35,9 +33,7 @@ public class UserService {
         request.setPassword(hashedPassword);
 
         AuthResponse response = getUserDAO().login(request);
-        if(response.isSuccess()) {
-            getAuthTokenDAO().addToken(response);
-        } else {
+        if(!response.isSuccess()) {
             return new AuthResponse("Failed to login");
         }
         return response;
@@ -76,9 +72,7 @@ public class UserService {
         request.setPassword(hashedPassword);
 
         AuthResponse response = getUserDAO().register(request);
-        if(response.isSuccess()) {
-            getAuthTokenDAO().addToken(response);
-        } else {
+        if(!response.isSuccess()) {
             return new AuthResponse("Failed to register");
         }
         return response;
@@ -110,6 +104,5 @@ public class UserService {
     UserDAO getUserDAO() {
         return daoProvider.getDaoFactory().getUserDAO();
     }
-    AuthTokenDAO getAuthTokenDAO() {return daoProvider.getDaoFactory().getAuthTokenDAO();}
 
 }

@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
@@ -39,6 +40,8 @@ public class UserDAODynamoDB implements UserDAO{
     }
 
     public LogoutResponse logout(LogoutRequest request) {
+        //invalidate AuthToken
+
         return new LogoutResponse();
     }
 
@@ -49,27 +52,49 @@ public class UserDAODynamoDB implements UserDAO{
 
         Table userTable = dynamoDB.getTable("users");
 
-        //create authToken
-        //Date().getTime()
-        AuthToken authToken = new AuthToken(UUID.randomUUID().toString(), new Date().toString() );
-
-        //TODO: put authToken into authToken table if register successful
-
         userTable.putItem(new Item().withPrimaryKey("alias", request.getUsername())
                 .withString("password", request.getPassword())
                 .withString("firstName", request.getFirstName())
                 .withString("lastName", request.getLastName())
                 .withString("image", request.getImage()));
 
+        //check to see if user was properly added to table
+
+
+        //create authToken
+        //Date().getTime()
+        AuthToken authToken = new AuthToken(UUID.randomUUID().toString(), new Date().toString() );
+
+        //TODO: put authToken into authToken table if register successful
+
         User user = new User(request.getFirstName(), request.getLastName(), request.getUsername(), request.getImage());
 
-        return new AuthResponse(user, authToken);
+        AuthResponse response = new AuthResponse(user, authToken);
+        if (!addAuthToken(response)){
+            return new AuthResponse("Could not start session");
+        }
+        return response;
 
     }
 
     public GetUserResponse findUser(GetUserRequest request){
         User user = getThisUser(request.getAlias());
         return new GetUserResponse(user);
+    }
+
+    public boolean addAuthToken(AuthResponse response){
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+
+        DynamoDB dynamoDB = new DynamoDB(client);
+
+        Table authTable = dynamoDB.getTable("authTokens");
+
+        //TODO: may be better to make the alias the primary key with the timeStamp as the sort key
+        authTable.putItem(new Item().withPrimaryKey("token", response.getAuthToken().getToken())
+                .withString("timeStamp", response.getAuthToken().getDatetime())
+                .withString("alias", response.getUser().getAlias()));
+
+        return true;
     }
 
     public boolean availableAlias(String alias) {

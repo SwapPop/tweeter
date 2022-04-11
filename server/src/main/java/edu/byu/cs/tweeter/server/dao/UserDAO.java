@@ -1,5 +1,7 @@
 package edu.byu.cs.tweeter.server.dao;
 
+import edu.byu.cs.tweeter.model.domain.AuthToken;
+import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.GetUserRequest;
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
@@ -19,5 +21,5 @@ public interface UserDAO {
 
     boolean availableAlias(String username);
 
-    boolean addAuthToken(AuthResponse response);
+    boolean addAuthToken(AuthToken token, User user);
 }

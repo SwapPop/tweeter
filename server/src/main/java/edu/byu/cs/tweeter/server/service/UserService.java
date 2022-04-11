@@ -1,7 +1,12 @@
 package edu.byu.cs.tweeter.server.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 
 import edu.byu.cs.tweeter.model.net.request.GetUserRequest;
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
@@ -12,7 +17,6 @@ import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
 import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
 import edu.byu.cs.tweeter.server.dao.DAOFactoryProvider;
 import edu.byu.cs.tweeter.server.dao.UserDAO;
-import edu.byu.cs.tweeter.server.dao.UserDAODynamoDB;
 
 public class UserService {
 
@@ -75,6 +79,7 @@ public class UserService {
         if(!response.isSuccess()) {
             return new AuthResponse("Failed to register");
         }
+
         return response;
     }
 
@@ -99,6 +104,27 @@ public class UserService {
             e.printStackTrace();
         }
         return "FAILED TO HASH";
+    }
+
+    //TO BE USED IN TESTING
+    public String getByteArrayFromImageURL(String url) {
+
+        try {
+            URL imageUrl = new URL(url);
+            URLConnection ucon = imageUrl.openConnection();
+            InputStream is = ucon.getInputStream();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int read = 0;
+            while ((read = is.read(buffer, 0, buffer.length)) != -1) {
+                baos.write(buffer, 0, read);
+            }
+            baos.flush();
+            return Base64.getEncoder().encodeToString(baos.toByteArray());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     UserDAO getUserDAO() {

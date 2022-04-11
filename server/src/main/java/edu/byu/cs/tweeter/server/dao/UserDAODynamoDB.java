@@ -42,9 +42,30 @@ public class UserDAODynamoDB implements UserDAO{
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = getDummyUser();
-        AuthToken authToken = getDummyAuthToken();
-        return new AuthResponse(user, authToken);
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+
+        DynamoDB dynamoDB = new DynamoDB(client);
+
+        Table userTable = dynamoDB.getTable("users");
+
+        Item existingUser = userTable.getItem("alias", request.getUsername()).withString("password", request.getPassword());
+
+        if (existingUser == null) {
+            return new AuthResponse("Incorrect username or password.");
+        }
+        else {
+            User currentUser = new User(existingUser.getString("firstName"), existingUser.getString("lastName"), existingUser.getString("alias"), existingUser.getString("image"));
+            AuthToken authToken = new AuthToken(UUID.randomUUID().toString(), new Date().toString() );
+
+            if (!addAuthToken(authToken, currentUser)){
+                return new AuthResponse("Could not start session");
+            }
+            return new AuthResponse(currentUser, authToken);
+        }
+
+//        User user = getDummyUser();
+//        AuthToken authToken = getDummyAuthToken();
+//        return new AuthResponse(user, authToken);
     }
 
     public LogoutResponse logout(LogoutRequest request) {
@@ -114,36 +135,6 @@ public class UserDAODynamoDB implements UserDAO{
         else {
             return false;
         }
-
-//        Map<String, String> nameMap = new HashMap<String, String>();
-//        nameMap.put("alias", "alias");
-//
-//        Map<String, Object> valueMap = new HashMap<String, Object>();
-//        valueMap.put("alias", alias);
-//
-//        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("alias = alias").withNameMap(nameMap)
-//                .withValueMap(valueMap);
-//
-//        ItemCollection<QueryOutcome> items = null;
-//        Iterator<Item> iterator = null;
-//        Item item = null;
-//
-//        try {
-//            if(userTable.getDescription() == null){
-//                return true;
-//            }
-//            items = userTable.query(querySpec);
-//            iterator = items.iterator();
-//            while (iterator.hasNext()) {
-//                item = iterator.next();
-//                if (item.getString("alias").equals(alias)) {
-//                    return false;
-//                }
-//            }
-//        } catch (Exception e) {
-//            System.err.println(e.getMessage());
-//        }
-//        return true;
     }
 
     public String uploadImage(String base64EncodedImage, String key) {

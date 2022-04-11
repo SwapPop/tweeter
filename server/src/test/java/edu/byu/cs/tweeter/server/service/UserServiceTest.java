@@ -10,6 +10,7 @@ import java.util.Arrays;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
+import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
 import edu.byu.cs.tweeter.model.net.response.AuthResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
@@ -24,8 +25,8 @@ public class UserServiceTest {
     private UserDAODynamoDB mockUserDAO;
     private UserService userServiceSpy;
     private UserService userService;
-//    User currentUser = new User("Jake", "Taylor", "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/donald_duck.png");
-    User currentUser = new User("Jake", "Taylor", "https://jtay11-tweeter-images.s3.amazonaws.com/License.jpg");
+    User currentUser = new User("Jake", "Taylor", "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/donald_duck.png");
+//    User currentUser = new User("Jake", "Taylor", "https://jtay11-tweeter-images.s3.amazonaws.com/License.jpg");
 
     @Before
     public void setup() {
@@ -59,5 +60,16 @@ public class UserServiceTest {
         AuthResponse response = userService.register(request);
         Assert.assertEquals(expectedResponse.getUser(), response.getUser());
         Assert.assertEquals(request.getImage(), userService.getByteArrayFromImageURL(response.getUser().getImageUrl()));
+    }
+
+    @Test
+    public void testLogin_validRequest_correctResponse() {
+        AuthResponse response = userService.register(request);
+        Assert.assertEquals(expectedResponse.getUser(), response.getUser());
+        Assert.assertEquals(request.getImage(), userService.getByteArrayFromImageURL(response.getUser().getImageUrl()));
+
+        AuthResponse loginResponse = userService.login(new LoginRequest(currentUser.getAlias(), "password"));
+        Assert.assertEquals(expectedResponse.getUser(), loginResponse.getUser());
+
     }
 }

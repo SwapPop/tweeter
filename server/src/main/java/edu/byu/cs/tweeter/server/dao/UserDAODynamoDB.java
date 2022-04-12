@@ -55,9 +55,12 @@ public class UserDAODynamoDB implements UserDAO{
         }
         else {
             User currentUser = new User(existingUser.getString("firstName"), existingUser.getString("lastName"), existingUser.getString("alias"), existingUser.getString("image"));
-            AuthToken authToken = new AuthToken(UUID.randomUUID().toString(), new Date().toString() );
 
-            if (!addAuthToken(authToken, currentUser)){
+            DAOFactoryProvider provider = new DAOFactoryProvider();
+            AuthTokenDAO authTokenDAO = provider.getDaoFactory().getAuthTokenDAO();
+            AuthToken authToken = authTokenDAO.addAuthToken(request.getUsername());
+
+            if (authToken == null){
                 return new AuthResponse("Could not start session");
             }
             return new AuthResponse(currentUser, authToken);
@@ -87,14 +90,17 @@ public class UserDAODynamoDB implements UserDAO{
                 .withString("password", request.getPassword())
                 .withString("firstName", request.getFirstName())
                 .withString("lastName", request.getLastName())
+                .withInt("followersCount", 0)
+                .withInt("followingCount", 0)
                 .withString("image", imageUrl));
 
-        //create authToken
-        AuthToken authToken = new AuthToken(UUID.randomUUID().toString(), new Date().toString() );
+        DAOFactoryProvider provider = new DAOFactoryProvider();
+        AuthTokenDAO authTokenDAO = provider.getDaoFactory().getAuthTokenDAO();
+        AuthToken authToken = authTokenDAO.addAuthToken(request.getUsername());
 
         User user = new User(request.getFirstName(), request.getLastName(), request.getUsername(), imageUrl);
 
-        if (!addAuthToken(authToken, user)){
+        if (authToken == null){
             return new AuthResponse("Could not start session");
         }
         return new AuthResponse(user, authToken);
@@ -104,20 +110,6 @@ public class UserDAODynamoDB implements UserDAO{
     public GetUserResponse findUser(GetUserRequest request){
         User user = getThisUser(request.getAlias());
         return new GetUserResponse(user);
-    }
-
-    public boolean addAuthToken(AuthToken token, User user){
-        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
-
-        DynamoDB dynamoDB = new DynamoDB(client);
-
-        Table authTable = dynamoDB.getTable("authTokens");
-
-        authTable.putItem(new Item().withPrimaryKey("token", token.getToken())
-                .withString("timeStamp", token.getDatetime())
-                .withString("alias", user.getAlias()));
-
-        return true;
     }
 
     public boolean availableAlias(String alias) {

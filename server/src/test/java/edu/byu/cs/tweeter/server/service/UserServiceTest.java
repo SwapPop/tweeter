@@ -10,6 +10,8 @@ import java.util.Arrays;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowersCountRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowingCountRequest;
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
 import edu.byu.cs.tweeter.model.net.response.AuthResponse;
@@ -25,6 +27,7 @@ public class UserServiceTest {
     private UserDAODynamoDB mockUserDAO;
     private UserService userServiceSpy;
     private UserService userService;
+    private FollowService followService;
     User currentUser = new User("Jake", "Taylor", "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/donald_duck.png");
 //    User currentUser = new User("Jake", "Taylor", "https://jtay11-tweeter-images.s3.amazonaws.com/License.jpg");
 
@@ -32,6 +35,7 @@ public class UserServiceTest {
     public void setup() {
         AuthToken authToken = new AuthToken();
         userService = new UserService();
+        followService = new FollowService();
 
         String imageString = userService.getByteArrayFromImageURL(currentUser.getImageUrl());
         // Setup a request object to use in the tests
@@ -70,6 +74,12 @@ public class UserServiceTest {
 
         AuthResponse loginResponse = userService.login(new LoginRequest(currentUser.getAlias(), "password"));
         Assert.assertEquals(expectedResponse.getUser(), loginResponse.getUser());
+        Assert.assertNotNull(loginResponse.getAuthToken());
+
+        int followersCount = followService.getFollowersCount(new GetFollowersCountRequest(loginResponse.getUser().getAlias(), loginResponse.getAuthToken())).getCount();
+        Assert.assertEquals(0, followersCount);
+        int followingCount = followService.getFollowingCount(new GetFollowingCountRequest(loginResponse.getUser().getAlias(), loginResponse.getAuthToken())).getCount();
+        Assert.assertEquals(0, followingCount);
 
     }
 }

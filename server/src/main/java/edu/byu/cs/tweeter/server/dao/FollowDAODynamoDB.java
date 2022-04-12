@@ -1,9 +1,16 @@
 package edu.byu.cs.tweeter.server.dao;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.Table;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FollowRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
@@ -44,25 +51,29 @@ public class FollowDAODynamoDB implements FollowDAO{
      * @return said count.
      */
     public GetFollowingCountResponse getFollowingCount(GetFollowingCountRequest request) {
-        int count = getDummyFollowingCountResponse(request.getAlias());
+        //validate AuthToken from request
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+
+        DynamoDB dynamoDB = new DynamoDB(client);
+
+        Table userTable = dynamoDB.getTable("users");
+
+        int count = userTable.getItem("alias", request.getAlias()).getInt("followingCount");
+
         return new GetFollowingCountResponse(count);
     }
 
-    private Integer getDummyFollowingCountResponse(String alias) {
-        // TODO: uses the dummy data.  Replace with a real implementation.
-        assert alias != null;
-        return getDummyFollowees().size();
-    }
-
     public GetFollowersCountResponse getFollowersCount(GetFollowersCountRequest request) {
-        int count = getDummyFollowersCountResponse(request.getAlias());
-        return new GetFollowersCountResponse(count);
-    }
+        //validate AuthToken from request
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
 
-    private Integer getDummyFollowersCountResponse(String alias) {
-        // TODO: uses the dummy data.  Replace with a real implementation.
-        assert alias != null;
-        return getDummyFollowers().size();
+        DynamoDB dynamoDB = new DynamoDB(client);
+
+        Table userTable = dynamoDB.getTable("users");
+
+        int count = userTable.getItem("alias", request.getAlias()).getInt("followersCount");
+
+        return new GetFollowersCountResponse(count);
     }
 
     public IsFollowerResponse isFollower(IsFollowerRequest request) {

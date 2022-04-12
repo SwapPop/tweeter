@@ -16,4 +16,7 @@ public class DAOFactoryDynamoDB implements DAOFactory{
     public UserDAO getUserDAO() {
         return new UserDAODynamoDB();
     }
+
+    @Override
+    public AuthTokenDAO getAuthTokenDAO() {return new AuthTokenDAODynamoDB();}
 }

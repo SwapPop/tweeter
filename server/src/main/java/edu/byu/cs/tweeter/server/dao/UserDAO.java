@@ -20,6 +20,4 @@ public interface UserDAO {
     GetUserResponse findUser(GetUserRequest request);
 
     boolean availableAlias(String username);
-
-    boolean addAuthToken(AuthToken token, User user);
 }

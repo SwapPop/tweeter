@@ -14,9 +14,11 @@ import edu.byu.cs.tweeter.model.net.response.GetFollowersCountResponse;
 import edu.byu.cs.tweeter.model.net.response.GetFollowingCountResponse;
 import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
 import edu.byu.cs.tweeter.model.net.response.UnfollowResponse;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
 import edu.byu.cs.tweeter.server.dao.DAOFactoryProvider;
 import edu.byu.cs.tweeter.server.dao.FollowDAO;
 import edu.byu.cs.tweeter.server.dao.FollowDAODynamoDB;
+import edu.byu.cs.tweeter.server.dao.UserDAO;
 
 /**
  * Contains the business logic for getting the users a user is following.
@@ -62,6 +64,9 @@ public class FollowService {
         } else if(request.getAuthToken() == null) {
             throw new RuntimeException("[BadRequest] Request needs to have an AuthToken");
         }
+        if(!getAuthTokenDAO().validateAuthToken(request.getAuthToken())){
+            return new GetFollowingCountResponse("Session expired");
+        }
         return getFollowDAO().getFollowingCount(request);
     }
 
@@ -70,6 +75,9 @@ public class FollowService {
             throw new RuntimeException("[BadRequest] Request needs to have a target user alias");
         } else if(request.getAuthToken() == null) {
             throw new RuntimeException("[BadRequest] Request needs to have an AuthToken");
+        }
+        if(!getAuthTokenDAO().validateAuthToken(request.getAuthToken())){
+            return new GetFollowersCountResponse("Session expired");
         }
         return getFollowDAO().getFollowersCount(request);
     }
@@ -111,4 +119,8 @@ public class FollowService {
     FollowDAO getFollowDAO() {
         return daoProvider.getDaoFactory().getFollowDAO();
     }
+    AuthTokenDAO getAuthTokenDAO() {
+        return daoProvider.getDaoFactory().getAuthTokenDAO();
+    }
+
 }

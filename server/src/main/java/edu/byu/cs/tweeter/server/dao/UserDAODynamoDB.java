@@ -73,8 +73,15 @@ public class UserDAODynamoDB implements UserDAO{
 
     public LogoutResponse logout(LogoutRequest request) {
         //invalidate AuthToken
-
-        return new LogoutResponse();
+        DAOFactoryProvider provider = new DAOFactoryProvider();
+        AuthTokenDAO authTokenDAO = provider.getDaoFactory().getAuthTokenDAO();
+        boolean success = authTokenDAO.removeAuthToken(request.getAuthToken());
+        if(success) {
+            return new LogoutResponse();
+        }
+        else {
+            return new LogoutResponse("Failed to logout");
+        }
     }
 
     public AuthResponse register(RegisterRequest request) {

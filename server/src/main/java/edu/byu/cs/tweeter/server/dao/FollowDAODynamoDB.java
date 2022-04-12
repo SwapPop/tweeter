@@ -3,89 +3,75 @@ package edu.byu.cs.tweeter.server.dao;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 
-import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FollowRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
-import edu.byu.cs.tweeter.model.net.request.GetFollowersCountRequest;
-import edu.byu.cs.tweeter.model.net.request.GetFollowingCountRequest;
 import edu.byu.cs.tweeter.model.net.request.IsFollowerRequest;
-import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.request.UnfollowRequest;
 import edu.byu.cs.tweeter.model.net.response.FollowResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
-import edu.byu.cs.tweeter.model.net.response.GetFollowersCountResponse;
-import edu.byu.cs.tweeter.model.net.response.GetFollowingCountResponse;
 import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
-import edu.byu.cs.tweeter.model.net.response.PostStatusResponse;
 import edu.byu.cs.tweeter.model.net.response.UnfollowResponse;
-import edu.byu.cs.tweeter.util.FakeData;
 
 /**
  * A DAO for accessing 'following' data from the database.
  */
 public class FollowDAODynamoDB implements FollowDAO{
 
-    public FollowResponse follow(FollowRequest request) {
+    public FollowResponse follow(FollowRequest request, User follower) {
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table userTable = dynamoDB.getTable("follows");
+
+        userTable.putItem(new Item().withPrimaryKey("follower_handle", follower.getAlias(), "followee_handle", request.getFollowee().getAlias())
+                .withString("follower_firstName", follower.getFirstName())
+                .withString("follower_lastName", follower.getLastName())
+                .withString("followee_firstName", request.getFollowee().getFirstName())
+                .withString("followee_lastName", request.getFollowee().getLastName()));
+
+
         return new FollowResponse();
     }
 
-    public UnfollowResponse unfollow(UnfollowRequest request) {
+    public UnfollowResponse unfollow(UnfollowRequest request, String userAlias) {
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table userTable = dynamoDB.getTable("follows");
+
+        userTable.deleteItem("follower_handle", userAlias,"followee_handle", request.getFollowee().getAlias());
+
         return new UnfollowResponse();
     }
 
-    /**
-     * Gets the count of users from the database that the user specified is following. The
-     * current implementation uses generated data and doesn't actually access a database.
-     *
-     * @param request the User whose count of how many following is desired.
-     * @return said count.
-     */
-    public GetFollowingCountResponse getFollowingCount(GetFollowingCountRequest request) {
-        //validate AuthToken from request
-        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
-
-        DynamoDB dynamoDB = new DynamoDB(client);
-
-        Table userTable = dynamoDB.getTable("users");
-
-        int count = userTable.getItem("alias", request.getAlias()).getInt("followingCount");
-
-        return new GetFollowingCountResponse(count);
-    }
-
-    public GetFollowersCountResponse getFollowersCount(GetFollowersCountRequest request) {
-        //validate AuthToken from request
-        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
-
-        DynamoDB dynamoDB = new DynamoDB(client);
-
-        Table userTable = dynamoDB.getTable("users");
-
-        int count = userTable.getItem("alias", request.getAlias()).getInt("followersCount");
-
-        return new GetFollowersCountResponse(count);
-    }
-
     public IsFollowerResponse isFollower(IsFollowerRequest request) {
-        boolean isFollower = getDummyIsFollower(request.getFollower(), request.getFollowee());
-        return new IsFollowerResponse(isFollower);
-    }
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table userTable = dynamoDB.getTable("follows");
 
-    private boolean getDummyIsFollower(String follower, String followee) {
-        // TODO: uses random bool.  Replace with a real implementation.
-        assert follower != null;
-        assert followee != null;
-        return new Random().nextInt() > 0;
+        Item follows = userTable.getItem("follower_handle", request.getFollower(),"followee_handle", request.getFollowee());
+
+        boolean isFollower;
+        if (follows == null){
+            isFollower = false;
+        } else {
+            isFollower = true;
+        }
+
+        return new IsFollowerResponse(isFollower);
     }
 
     /**
@@ -99,11 +85,45 @@ public class FollowDAODynamoDB implements FollowDAO{
      * @return the followees.
      */
     public FollowingResponse getFollowees(FollowingRequest request) {
-        // TODO: Generates dummy data. Replace with a real implementation.
         assert request.getLimit() > 0;
         assert request.getFollowerAlias() != null;
 
-        List<User> allFollowees = getDummyFollowees();
+        AmazonDynamoDB client=AmazonDynamoDBClientBuilder.standard()
+                .withRegion("us-east-1")
+                .build();
+
+        DynamoDB dynamoDB=new DynamoDB(client);
+
+        Table table=dynamoDB.getTable("follows");
+
+        HashMap<String, Object> valueMap = new HashMap<String, Object>();
+        valueMap.put(":frh", request.getFollowerAlias());
+
+        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("follower_handle = :frh")
+                .withValueMap(valueMap).withScanIndexForward(false);
+
+        ItemCollection<QueryOutcome> followees = null;
+        Iterator<Item> iter = null;
+        Item item = null;
+        List<User> allFollowees = new ArrayList<>();
+
+        try {
+            followees = table.query(querySpec);
+
+            iter = followees.iterator();
+            while (iter.hasNext()) {
+                item = iter.next();
+                String followeeHandle = item.getString("followee_handle");
+                DAOFactoryProvider provider = new DAOFactoryProvider();
+                User user = provider.getDaoFactory().getUserDAO().getUserByAlias(followeeHandle);
+                allFollowees.add(user);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Unable to query relationship");
+            System.err.println(e.getMessage());
+        }
+
         List<User> responseFollowees = new ArrayList<>(request.getLimit());
 
         boolean hasMorePages = false;
@@ -124,18 +144,18 @@ public class FollowDAODynamoDB implements FollowDAO{
     }
 
     public FollowersResponse getFollowers(FollowersRequest request) {
-        // TODO: Generates dummy data. Replace with a real implementation.
         assert request.getLimit() > 0;
-        assert request.getFollowerAlias() != null;
+        assert request.getFolloweeAlias() != null;
 
-        List<User> allFollowers = getDummyFollowers();
+        List<User> allFollowers = getAllFollowers(request.getFolloweeAlias());
+
         List<User> responseFollowers = new ArrayList<>(request.getLimit());
 
         boolean hasMorePages = false;
 
         if(request.getLimit() > 0) {
             if (allFollowers != null) {
-                int followersIndex = getFolloweesStartingIndex(request.getLastFollowerAlias(), allFollowers);
+                int followersIndex = getFollowersStartingIndex(request.getLastFollowerAlias(), allFollowers);
 
                 for(int limitCounter = 0; followersIndex < allFollowers.size() && limitCounter < request.getLimit(); followersIndex++, limitCounter++) {
                     responseFollowers.add(allFollowers.get(followersIndex));
@@ -146,6 +166,47 @@ public class FollowDAODynamoDB implements FollowDAO{
         }
 
         return new FollowersResponse(responseFollowers, hasMorePages);
+    }
+
+    public List<User> getAllFollowers(String followeeAlias) {
+        AmazonDynamoDB client=AmazonDynamoDBClientBuilder.standard()
+                .withRegion("us-east-1")
+                .build();
+
+        DynamoDB dynamoDB=new DynamoDB(client);
+
+        Table table=dynamoDB.getTable("follows");
+
+        Index index =table.getIndex("follows_index");
+
+        HashMap<String, Object> valueMap = new HashMap<String, Object>();
+        valueMap.put(":feh", followeeAlias);
+
+        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("followee_handle = :feh")
+                .withValueMap(valueMap).withScanIndexForward(false);
+
+        ItemCollection<QueryOutcome> followers = null;
+        Iterator<Item> iter = null;
+        Item item = null;
+        List<User> allFollowers = new ArrayList<>();
+
+        try {
+            followers = index.query(querySpec);
+
+            iter = followers.iterator();
+            while (iter.hasNext()) {
+                item = iter.next();
+                String followerHandle = item.getString("follower_handle");
+                DAOFactoryProvider provider = new DAOFactoryProvider();
+                User user = provider.getDaoFactory().getUserDAO().getUserByAlias(followerHandle);
+                allFollowers.add(user);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Unable to query relationship");
+            System.err.println(e.getMessage());
+        }
+        return allFollowers;
     }
 
     /**
@@ -196,29 +257,5 @@ public class FollowDAODynamoDB implements FollowDAO{
         }
 
         return followersIndex;
-    }
-
-    /**
-     * Returns the list of dummy followee data. This is written as a separate method to allow
-     * mocking of the followees.
-     *
-     * @return the followees.
-     */
-    List<User> getDummyFollowees() {
-        return getFakeData().getFakeUsers();
-    }
-    List<User> getDummyFollowers() {
-        return getFakeData().getFakeUsers();
-    }
-
-
-    /**
-     * Returns the {@link FakeData} object used to generate dummy followees.
-     * This is written as a separate method to allow mocking of the {@link FakeData}.
-     *
-     * @return a {@link FakeData} instance.
-     */
-    FakeData getFakeData() {
-        return new FakeData();
     }
 }

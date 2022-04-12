@@ -7,4 +7,6 @@ public interface AuthTokenDAO {
     AuthToken addAuthToken(String alias);
     AuthToken refreshToken(AuthToken token, String alias);
     boolean removeAuthToken(AuthToken token);
+
+    String getAliasFromToken(AuthToken authToken);
 }

@@ -5,10 +5,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
@@ -17,22 +14,22 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import java.io.ByteArrayInputStream;
 import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
 
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
+import edu.byu.cs.tweeter.model.net.request.FollowRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowersCountRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowingCountRequest;
 import edu.byu.cs.tweeter.model.net.request.GetUserRequest;
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
 import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
+import edu.byu.cs.tweeter.model.net.request.UnfollowRequest;
 import edu.byu.cs.tweeter.model.net.response.AuthResponse;
+import edu.byu.cs.tweeter.model.net.response.GetFollowersCountResponse;
+import edu.byu.cs.tweeter.model.net.response.GetFollowingCountResponse;
 import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
 import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
-import edu.byu.cs.tweeter.util.FakeData;
 
 public class UserDAODynamoDB implements UserDAO{
 
@@ -43,17 +40,14 @@ public class UserDAODynamoDB implements UserDAO{
 
     public AuthResponse login(LoginRequest request) {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
-
         DynamoDB dynamoDB = new DynamoDB(client);
-
         Table userTable = dynamoDB.getTable("users");
 
         Item existingUser = userTable.getItem("alias", request.getUsername()).withString("password", request.getPassword());
 
         if (existingUser == null) {
             return new AuthResponse("Incorrect username or password.");
-        }
-        else {
+        } else {
             User currentUser = new User(existingUser.getString("firstName"), existingUser.getString("lastName"), existingUser.getString("alias"), existingUser.getString("image"));
 
             DAOFactoryProvider provider = new DAOFactoryProvider();
@@ -65,10 +59,6 @@ public class UserDAODynamoDB implements UserDAO{
             }
             return new AuthResponse(currentUser, authToken);
         }
-
-//        User user = getDummyUser();
-//        AuthToken authToken = getDummyAuthToken();
-//        return new AuthResponse(user, authToken);
     }
 
     public LogoutResponse logout(LogoutRequest request) {
@@ -78,17 +68,14 @@ public class UserDAODynamoDB implements UserDAO{
         boolean success = authTokenDAO.removeAuthToken(request.getAuthToken());
         if(success) {
             return new LogoutResponse();
-        }
-        else {
+        } else {
             return new LogoutResponse("Failed to logout");
         }
     }
 
     public AuthResponse register(RegisterRequest request) {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
-
         DynamoDB dynamoDB = new DynamoDB(client);
-
         Table userTable = dynamoDB.getTable("users");
 
         String imageUrl = uploadImage(request.getImage(), request.getUsername());
@@ -115,15 +102,48 @@ public class UserDAODynamoDB implements UserDAO{
     }
 
     public GetUserResponse findUser(GetUserRequest request){
-        User user = getThisUser(request.getAlias());
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table userTable = dynamoDB.getTable("users");
+
+        Item thisUser = userTable.getItem("alias", request.getAlias());
+
+        User user = new User(thisUser.getString("firstName"), thisUser.getString("lastName"), thisUser.getString("alias"), thisUser.getString("image"));
         return new GetUserResponse(user);
+    }
+
+    /**
+     * Gets the count of users from the database that the user specified is following. The
+     * current implementation uses generated data and doesn't actually access a database.
+     *
+     * @param request the User whose count of how many following is desired.
+     * @return said count.
+     */
+    public GetFollowingCountResponse getFollowingCount(GetFollowingCountRequest request) {
+        //validate AuthToken from request
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table userTable = dynamoDB.getTable("users");
+
+        int count = userTable.getItem("alias", request.getAlias()).getInt("followingCount");
+
+        return new GetFollowingCountResponse(count);
+    }
+
+    public GetFollowersCountResponse getFollowersCount(GetFollowersCountRequest request) {
+        //validate AuthToken from request
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table userTable = dynamoDB.getTable("users");
+
+        int count = userTable.getItem("alias", request.getAlias()).getInt("followersCount");
+
+        return new GetFollowersCountResponse(count);
     }
 
     public boolean availableAlias(String alias) {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
-
         DynamoDB dynamoDB = new DynamoDB(client);
-
         Table userTable = dynamoDB.getTable("users");
 
         Item existingUser = userTable.getItem("alias", alias);
@@ -134,6 +154,79 @@ public class UserDAODynamoDB implements UserDAO{
         else {
             return false;
         }
+    }
+
+    @Override
+    public void increaseFollowCounts(FollowRequest request, String userAlias) {
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table userTable = dynamoDB.getTable("users");
+
+        Item followee = userTable.getItem("alias", request.getFollowee().getAlias());
+        int followers = followee.getInt("followersCount");
+        followers++;
+
+        userTable.putItem(new Item().withPrimaryKey("alias", followee.getString("alias"))
+                .withString("password", followee.getString("password"))
+                .withString("firstName", followee.getString("firstName"))
+                .withString("lastName", followee.getString("lastName"))
+                .withInt("followersCount", followers)
+                .withInt("followingCount", followee.getInt("followingCount"))
+                .withString("image", followee.getString("image")));
+
+        Item follower = userTable.getItem("alias", userAlias);
+        int following = follower.getInt("followingCount");
+        following++;
+
+        userTable.putItem(new Item().withPrimaryKey("alias", follower.getString("alias"))
+                .withString("password", follower.getString("password"))
+                .withString("firstName", follower.getString("firstName"))
+                .withString("lastName", follower.getString("lastName"))
+                .withInt("followersCount", follower.getInt("followersCount"))
+                .withInt("followingCount", following)
+                .withString("image", follower.getString("image")));
+    }
+
+    @Override
+    public void decreaseFollowCounts(UnfollowRequest request, String userAlias) {
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table userTable = dynamoDB.getTable("users");
+
+        Item followee = userTable.getItem("alias", request.getFollowee().getAlias());
+        int followers = followee.getInt("followersCount");
+        followers--;
+
+        userTable.putItem(new Item().withPrimaryKey("alias", followee.getString("alias"))
+                .withString("password", followee.getString("password"))
+                .withString("firstName", followee.getString("firstName"))
+                .withString("lastName", followee.getString("lastName"))
+                .withInt("followersCount", followers)
+                .withInt("followingCount", followee.getInt("followingCount"))
+                .withString("image", followee.getString("image")));
+
+        Item follower = userTable.getItem("alias", userAlias);
+        int following = follower.getInt("followingCount");
+        following--;
+
+        userTable.putItem(new Item().withPrimaryKey("alias", follower.getString("alias"))
+                .withString("password", follower.getString("password"))
+                .withString("firstName", follower.getString("firstName"))
+                .withString("lastName", follower.getString("lastName"))
+                .withInt("followersCount", follower.getInt("followersCount"))
+                .withInt("followingCount", following)
+                .withString("image", follower.getString("image")));
+    }
+
+    @Override
+    public User getUserByAlias(String userHandle) {
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table userTable = dynamoDB.getTable("users");
+
+        Item item = userTable.getItem("alias", userHandle);
+
+        return new User(item.getString("firstName"), item.getString("lastName"), item.getString("alias"), item.getString("image"));
     }
 
     public String uploadImage(String base64EncodedImage, String key) {
@@ -149,40 +242,5 @@ public class UserDAODynamoDB implements UserDAO{
                 .withCannedAcl(CannedAccessControlList.PublicRead);
         s3.putObject(request);
         return s3.getUrl(S3_IMAGES_BUCKET, key).toString();
-    }
-
-
-    /**
-     * Returns the dummy user to be returned by the login operation.
-     * This is written as a separate method to allow mocking of the dummy user.
-     *
-     * @return a dummy user.
-     */
-    public User getDummyUser() {
-        return getFakeData().getFirstUser();
-    }
-
-    User getThisUser(String alias) {
-        return getFakeData().findUserByAlias(alias);
-    }
-
-    /**
-     * Returns the dummy auth token to be returned by the login operation.
-     * This is written as a separate method to allow mocking of the dummy auth token.
-     *
-     * @return a dummy auth token.
-     */
-    public AuthToken getDummyAuthToken() {
-        return getFakeData().getAuthToken();
-    }
-
-    /**
-     * Returns the {@link FakeData} object used to generate dummy users and auth tokens.
-     * This is written as a separate method to allow mocking of the {@link FakeData}.
-     *
-     * @return a {@link FakeData} instance.
-     */
-    FakeData getFakeData() {
-        return new FakeData();
     }
 }

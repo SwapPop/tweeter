@@ -75,6 +75,18 @@ public class AuthTokenDAODynamoDB implements AuthTokenDAO {
     }
 
     @Override
+    public String getAliasFromToken(AuthToken authToken) {
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-1").build();
+
+        DynamoDB dynamoDB = new DynamoDB(client);
+
+        Table authTable = dynamoDB.getTable("authTokens");
+
+        Item token = authTable.getItem("token", authToken.getToken());
+        return token.getString("alias");
+    }
+
+    @Override
     public AuthToken refreshToken(AuthToken token, String alias) {
         long date = new Date().getTime();
 

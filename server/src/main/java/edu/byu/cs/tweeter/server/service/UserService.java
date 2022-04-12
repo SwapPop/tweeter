@@ -8,13 +8,18 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
+import edu.byu.cs.tweeter.model.net.request.GetFollowersCountRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowingCountRequest;
 import edu.byu.cs.tweeter.model.net.request.GetUserRequest;
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
 import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
 import edu.byu.cs.tweeter.model.net.response.AuthResponse;
+import edu.byu.cs.tweeter.model.net.response.GetFollowersCountResponse;
+import edu.byu.cs.tweeter.model.net.response.GetFollowingCountResponse;
 import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
 import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
 import edu.byu.cs.tweeter.server.dao.DAOFactoryProvider;
 import edu.byu.cs.tweeter.server.dao.UserDAO;
 
@@ -83,14 +88,42 @@ public class UserService {
         return response;
     }
 
+    public GetFollowingCountResponse getFollowingCount(GetFollowingCountRequest request) {
+        if(request.getAlias() == null) {
+            throw new RuntimeException("[BadRequest] Request needs to have a target user alias");
+        } else if(request.getAuthToken() == null) {
+            throw new RuntimeException("[BadRequest] Request needs to have an AuthToken");
+        }
+        if(!getAuthTokenDAO().validateAuthToken(request.getAuthToken())){
+            return new GetFollowingCountResponse("Session expired");
+        }
+        return getUserDAO().getFollowingCount(request);
+    }
+
+    public GetFollowersCountResponse getFollowersCount(GetFollowersCountRequest request) {
+        if(request.getAlias() == null) {
+            throw new RuntimeException("[BadRequest] Request needs to have a target user alias");
+        } else if(request.getAuthToken() == null) {
+            throw new RuntimeException("[BadRequest] Request needs to have an AuthToken");
+        }
+        if(!getAuthTokenDAO().validateAuthToken(request.getAuthToken())){
+            return new GetFollowersCountResponse("Session expired");
+        }
+        return getUserDAO().getFollowersCount(request);
+    }
+
     public GetUserResponse getUser(GetUserRequest request) {
         if (request.getAlias() == null) {
             throw new RuntimeException("[BadRequest] Missing an alias");
         }
+
+        if(!getAuthTokenDAO().validateAuthToken(request.getAuthToken())){
+            return new GetUserResponse("Session expired");
+        }
         return getUserDAO().findUser(request);
     }
 
-    private static String hashPassword(String passwordToHash) {
+    public static String hashPassword(String passwordToHash) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(passwordToHash.getBytes());
@@ -129,6 +162,9 @@ public class UserService {
 
     UserDAO getUserDAO() {
         return daoProvider.getDaoFactory().getUserDAO();
+    }
+    AuthTokenDAO getAuthTokenDAO() {
+        return daoProvider.getDaoFactory().getAuthTokenDAO();
     }
 
 }

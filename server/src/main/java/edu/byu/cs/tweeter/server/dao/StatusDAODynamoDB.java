@@ -1,20 +1,26 @@
 package edu.byu.cs.tweeter.server.dao;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
+import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FeedRequest;
-import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
-import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
-import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
 import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.request.StoryRequest;
 import edu.byu.cs.tweeter.model.net.response.FeedResponse;
-import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
-import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
-import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
 import edu.byu.cs.tweeter.model.net.response.PostStatusResponse;
 import edu.byu.cs.tweeter.model.net.response.StoryResponse;
 import edu.byu.cs.tweeter.util.FakeData;
@@ -24,16 +30,85 @@ import edu.byu.cs.tweeter.util.FakeData;
  */
 public class StatusDAODynamoDB implements StatusDAO{
 
-    public PostStatusResponse postStatus(PostStatusRequest request) {
+    public PostStatusResponse postStatus(PostStatusRequest request, List<User> followers) {
+        AmazonDynamoDB client= AmazonDynamoDBClientBuilder.standard()
+                .withRegion("us-east-1")
+                .build();
+        DynamoDB dynamoDB=new DynamoDB(client);
+        Table storyTable=dynamoDB.getTable("story");
+        Table feedTable=dynamoDB.getTable("feed");
+
+        String senderAlias = request.getStatus().getUser().getAlias();
+        String date = request.getStatus().getDate();
+        String post = request.getStatus().getPost();
+        List<String> mentions = request.getStatus().getMentions();
+        List<String> urls = request.getStatus().getUrls();
+
+        storyTable.putItem(new Item().withPrimaryKey("sender_alias", senderAlias, "date_time", date)
+                .withString("post", post)
+                .withList("mentions", mentions)
+                .withList("urls", urls));
+
+        for(User f : followers){
+            feedTable.putItem(
+                    new Item().withPrimaryKey("receiver_alias", f.getAlias(), "date_time", date)
+                            .withString("post", post)
+                            .withString("sender_alias", senderAlias)
+                            .withList("mentions", mentions)
+                            .withList("urls", urls)
+            );
+        }
+
+
         return new PostStatusResponse();
     }
 
     public StoryResponse getStory(StoryRequest request) {
-        // TODO: Generates dummy data. Replace with a real implementation.
         assert request.getLimit() > 0;
         assert request.getUserAlias() != null;
 
-        List<Status> allStatuses = getDummyStatuses();
+//        List<Status> allStatuses = getDummyStatuses();
+
+        AmazonDynamoDB client=AmazonDynamoDBClientBuilder.standard()
+                .withRegion("us-east-1")
+                .build();
+        DynamoDB dynamoDB=new DynamoDB(client);
+        Table table=dynamoDB.getTable("story");
+
+        HashMap<String, Object> valueMap = new HashMap<String, Object>();
+        valueMap.put(":sal", request.getUserAlias());
+
+        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("sender_alias = :sal")
+                .withValueMap(valueMap).withScanIndexForward(false);
+
+        ItemCollection<QueryOutcome> story = null;
+        Iterator<Item> iter = null;
+        Item item = null;
+        List<Status> allStatuses = new ArrayList<>();
+
+        try {
+            story = table.query(querySpec);
+
+            iter = story.iterator();
+            while (iter.hasNext()) {
+                item = iter.next();
+                String senderAlias = item.getString("sender_alias");
+                String dateTime = item.getString("date_time");
+                String post = item.getString("post");
+                List<String> mentions = item.getList("mentions");
+                List<String> urls = item.getList("urls");
+                DAOFactoryProvider provider = new DAOFactoryProvider();
+                User user = provider.getDaoFactory().getUserDAO().getUserByAlias(senderAlias);
+                Status status = new Status(post, user, dateTime, urls, mentions);
+                allStatuses.add(status);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Unable to query relationship");
+            System.err.println(e.getMessage());
+        }
+
+
         List<Status> responseStatuses = new ArrayList<>(request.getLimit());
 
         boolean hasMorePages = false;
@@ -54,11 +129,47 @@ public class StatusDAODynamoDB implements StatusDAO{
     }
 
     public FeedResponse getFeed(FeedRequest request) {
-        // TODO: Generates dummy data. Replace with a real implementation.
         assert request.getLimit() > 0;
         assert request.getUserAlias() != null;
 
-        List<Status> allStatuses = getDummyStatuses();
+        AmazonDynamoDB client=AmazonDynamoDBClientBuilder.standard()
+                .withRegion("us-east-1")
+                .build();
+        DynamoDB dynamoDB=new DynamoDB(client);
+        Table table=dynamoDB.getTable("feed");
+
+        HashMap<String, Object> valueMap = new HashMap<String, Object>();
+        valueMap.put(":ral", request.getUserAlias());
+
+        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("receiver_alias = :ral")
+                .withValueMap(valueMap).withScanIndexForward(false);
+
+        ItemCollection<QueryOutcome> feed = null;
+        Iterator<Item> iter = null;
+        Item item = null;
+        List<Status> allStatuses = new ArrayList<>();
+
+        try {
+            feed = table.query(querySpec);
+
+            iter = feed.iterator();
+            while (iter.hasNext()) {
+                item = iter.next();
+                String senderAlias = item.getString("sender_alias");
+                String dateTime = item.getString("date_time");
+                String post = item.getString("post");
+                List<String> mentions = item.getList("mentions");
+                List<String> urls = item.getList("urls");
+                DAOFactoryProvider provider = new DAOFactoryProvider();
+                User user = provider.getDaoFactory().getUserDAO().getUserByAlias(senderAlias);
+                Status status = new Status(post, user, dateTime, urls, mentions);
+                allStatuses.add(status);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Unable to query relationship");
+            System.err.println(e.getMessage());
+        }
         List<Status> responseStatuses = new ArrayList<>(request.getLimit());
 
         boolean hasMorePages = false;

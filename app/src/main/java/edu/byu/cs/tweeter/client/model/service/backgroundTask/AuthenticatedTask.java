@@ -13,6 +13,6 @@ public abstract class AuthenticatedTask extends BackgroundTask{
     /**
      * Auth token for logged-in user.
      */
-    private AuthToken authToken;
+    protected AuthToken authToken;
 
 }

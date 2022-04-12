@@ -1,5 +1,9 @@
 package edu.byu.cs.tweeter.client.presenter;
 
+import android.os.Looper;
+
+import androidx.annotation.Nullable;
+
 import java.util.List;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
@@ -69,6 +73,15 @@ public abstract class PagedPresenter<T> extends Presenter{
         userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAlias, new GetUserObserver());
     }
 
+    @Nullable
+    private void setLastItem(List<T> items) {
+        lastItem = (items.size() > 0) ? items.get(items.size() - 1) : null;
+    }
+
+    public T getLastItem(){
+        return lastItem;
+    }
+
     public class PagedTemplateObserver implements PagedObserver<T> {
 
         @Override
@@ -76,7 +89,7 @@ public abstract class PagedPresenter<T> extends Presenter{
             setLoading(false);
             view.setLoadingStatus(false);
 
-            lastItem = (items.size() > 0) ? items.get(items.size() - 1) : null;
+            setLastItem(items);
             setHasMorePages(hasMorePages);
 
             view.addItems(items);
@@ -96,7 +109,6 @@ public abstract class PagedPresenter<T> extends Presenter{
             view.displayMessage("Failed to " + getActionString()+ " because of exception: " + exception);
         }
     }
-
 
     public class GetUserObserver implements edu.byu.cs.tweeter.client.model.service.observer.GetUserObserver {
 

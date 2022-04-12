@@ -20,6 +20,9 @@ android {
         sourceCompatibility = 11
         targetCompatibility = 11
     }
+    packagingOptions {
+        resources.excludes.add("META-INF/*")
+    }
 }
 
 dependencies {
@@ -36,6 +39,8 @@ dependencies {
 
     // Image management
     implementation 'com.squareup.picasso:picasso:2.71828'
+    implementation 'com.amazonaws:aws-java-sdk-core:1.12.186'
+    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.12.186'
 
     // Testing related dependencies
 

@@ -60,7 +60,7 @@ public class StatusDAODynamoDB implements StatusDAO{
         }
 
 
-        return new PostStatusResponse();
+        return new PostStatusResponse("Successfully Posted!");
     }
 
     public StoryResponse getStory(StoryRequest request) {

@@ -263,19 +263,21 @@ public class DynamoTestLoader {
         }
 
         try {
-            System.out.println("Adding Friend One to the database...");
-            PutItemOutcome outcome = userTable.putItem(
-                    new Item().withPrimaryKey("alias", "@friend1")
-                            .withString("password", "peekaboo1")
-                            .withString("firstName", "Friend")
-                            .withString("lastName", "One")
-                            .withString("image", "https://picsum.photos/id/237/300/300")
-                            .withInt("followersCount", 1)
-                            .withInt("followingCount", 1));
+            for (int i = 0; i < 50; i++) {
+                System.out.println("Adding Friend " + i + " to the database...");
+                PutItemOutcome outcome = userTable.putItem(
+                        new Item().withPrimaryKey("alias", "@friend" + i)
+                                .withString("password", "peekaboo" + i)
+                                .withString("firstName", "Friend")
+                                .withString("lastName", String.valueOf(i))
+                                .withString("image", "https://picsum.photos/id/237/300/300")
+                                .withInt("followersCount", 0)
+                                .withInt("followingCount", 0));
 
-            System.out.println("PutItem succeeded:\n" + outcome.getPutItemResult());
+                System.out.println("PutItem succeeded:\n" + outcome.getPutItemResult());
+            }
         } catch (Exception e){
-            System.err.println("Unable to add user: Friend One");
+            System.err.println("Unable to add user");
             System.err.println(e.getMessage());
         }
 
@@ -401,38 +403,42 @@ public class DynamoTestLoader {
         String currentDateTime = new Date().toString();
 
         try {
-            System.out.println("Adding a post to @jt's story...");
-            List<String> mentions = new ArrayList<>();
-            mentions.add("@friend2");
-            List<String> urls = new ArrayList<>();
-            urls.add("amazon.com");
+            for (int i = 0; i < 50; i++) {
+                System.out.println("Adding a post to @jt's story...");
+                List<String> mentions = new ArrayList<>();
+                mentions.add("@friend" + i);
+                List<String> urls = new ArrayList<>();
+                urls.add("amazon.com");
 
-            PutItemOutcome outcome = storyTable.putItem(
-                    new Item().withPrimaryKey("sender_alias", "@jt", "date_time", currentDateTime)
-                            .withString("post", "howdy gents @friend2 amazon.com")
-                            .withList("mentions", mentions)
-                            .withList("urls", urls));
+                PutItemOutcome outcome = storyTable.putItem(
+                        new Item().withPrimaryKey("sender_alias", "@jt", "date_time", currentDateTime)
+                                .withString("post", "howdy gents @friend" + i + " amazon.com")
+                                .withList("mentions", mentions)
+                                .withList("urls", urls));
+            }
         } catch (Exception e){
             System.err.println("Unable to add post to @jt's story");
             System.err.println(e.getMessage());
         }
 
         try {
-            System.out.println("Adding @jt's post to @friend2's feed...");
+            for (int i = 0; i < 50; i++) {
+                System.out.println("Adding @friend2's posts to @jt's feed...");
 
-            List<String> mentions = new ArrayList<>();
-            mentions.add("@friend2");
-            List<String> urls = new ArrayList<>();
-            urls.add("amazon.com");
+                List<String> mentions = new ArrayList<>();
+                mentions.add("@jt");
+                List<String> urls = new ArrayList<>();
+                urls.add("amazon.com");
 
-            PutItemOutcome outcome = feedTable.putItem(
-                    new Item().withPrimaryKey("receiver_alias", "@friend2", "date_time", currentDateTime)
-                            .withString("sender_alias", "@jt")
-                            .withString("post", "howdy gents @friend2 amazon.com")
-                            .withList("mentions", mentions)
-                            .withList("urls", urls));
+                PutItemOutcome outcome = feedTable.putItem(
+                        new Item().withPrimaryKey("receiver_alias", "@jt", "date_time", new Date().toString())
+                                .withString("sender_alias", "@friend2")
+                                .withString("post", i + "howdy gents @jt amazon.com")
+                                .withList("mentions", mentions)
+                                .withList("urls", urls));
+            }
         } catch (Exception e){
-            System.err.println("Unable to add post to @friend2's feed");
+            System.err.println("Unable to add post to @jt's feed");
             System.err.println(e.getMessage());
         }
 

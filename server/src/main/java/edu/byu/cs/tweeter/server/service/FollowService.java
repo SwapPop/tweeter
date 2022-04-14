@@ -1,6 +1,16 @@
 package edu.byu.cs.tweeter.server.service;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.amazonaws.services.sqs.model.SendMessageResult;
+
+import java.util.List;
+
+import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
+import edu.byu.cs.tweeter.model.net.JsonSerializer;
+import edu.byu.cs.tweeter.model.net.request.BatchFeedRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
@@ -8,6 +18,7 @@ import edu.byu.cs.tweeter.model.net.request.GetFollowersCountRequest;
 import edu.byu.cs.tweeter.model.net.request.GetFollowingCountRequest;
 import edu.byu.cs.tweeter.model.net.request.IsFollowerRequest;
 import edu.byu.cs.tweeter.model.net.request.UnfollowRequest;
+import edu.byu.cs.tweeter.model.net.response.BatchFeedResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
@@ -87,7 +98,6 @@ public class FollowService {
             return new FollowResponse("Session expired");
         }
         String userAlias = getAuthTokenDAO().getAliasFromToken(request.getAuthToken());
-        //TODO: Stuff like this may slow down the process quite a bit
         User follower = getUserDAO().getUserByAlias(userAlias);
         FollowResponse response = getFollowDAO().follow(request, follower);
         if (response.isSuccess()){
@@ -111,6 +121,26 @@ public class FollowService {
             getUserDAO().decreaseFollowCounts(request, userAlias);
         }
         return response;
+    }
+
+    public void batchFollowers(Status status) {
+
+        String lastFollowerAlias = null;
+        boolean hasMore = true;
+
+        while (hasMore){
+            BatchFeedResponse response = getFollowDAO().getAllFollowersAliases(status.getUser().getAlias(), 25, lastFollowerAlias);
+
+            BatchFeedRequest batchFeedRequest = new BatchFeedRequest(status, response.getFollowersAliases());
+            String messageBody = JsonSerializer.serialize(batchFeedRequest);
+
+            SendMessageRequest SMSrequest = new SendMessageRequest().withQueueUrl("https://sqs.us-east-1.amazonaws.com/924350594575/tweeterUpdateFeedQueue").withMessageBody(messageBody);
+            AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
+            sqs.sendMessage(SMSrequest);
+
+            lastFollowerAlias = response.getFollowersAliases().get(response.getFollowersAliases().size() - 1);
+            hasMore = response.getHasMorePages();
+        }
     }
 
     /**

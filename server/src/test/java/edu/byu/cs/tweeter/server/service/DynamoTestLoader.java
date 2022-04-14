@@ -1,4 +1,4 @@
-package edu.byu.cs.tweeter.server;
+package edu.byu.cs.tweeter.server.service;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;

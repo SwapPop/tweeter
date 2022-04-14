@@ -1,5 +1,7 @@
 package edu.byu.cs.tweeter.server.dao;
 
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+
 import java.util.List;
 
 import edu.byu.cs.tweeter.model.domain.User;
@@ -8,6 +10,7 @@ import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
 import edu.byu.cs.tweeter.model.net.request.IsFollowerRequest;
 import edu.byu.cs.tweeter.model.net.request.UnfollowRequest;
+import edu.byu.cs.tweeter.model.net.response.BatchFeedResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
@@ -25,5 +28,5 @@ public interface FollowDAO {
 
     UnfollowResponse unfollow(UnfollowRequest request, String userAlias);
 
-    List<User> getAllFollowers(String followeeAlias);
+    BatchFeedResponse getAllFollowersAliases(String alias, int limit, String lastFollowerAlias);
 }

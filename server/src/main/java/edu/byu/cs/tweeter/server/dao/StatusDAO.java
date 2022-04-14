@@ -2,6 +2,7 @@ package edu.byu.cs.tweeter.server.dao;
 
 import java.util.List;
 
+import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FeedRequest;
 import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
@@ -15,5 +16,7 @@ public interface StatusDAO {
 
     FeedResponse getFeed(FeedRequest request);
 
-    PostStatusResponse postStatus(PostStatusRequest request, List<User> followers);
+    void postStatusToStory(PostStatusRequest request);
+
+    void addStatusBatchToFeed(List<String> followersAliases, Status status);
 }

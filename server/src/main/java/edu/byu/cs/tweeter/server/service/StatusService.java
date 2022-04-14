@@ -1,12 +1,20 @@
 package edu.byu.cs.tweeter.server.service;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
+
 import java.util.List;
 
 import edu.byu.cs.tweeter.model.domain.User;
+import edu.byu.cs.tweeter.model.net.JsonSerializer;
+import edu.byu.cs.tweeter.model.net.request.BatchFeedRequest;
 import edu.byu.cs.tweeter.model.net.request.FeedRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowersQueueRequest;
 import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.request.StoryRequest;
+import edu.byu.cs.tweeter.model.net.response.BatchFeedResponse;
 import edu.byu.cs.tweeter.model.net.response.FeedResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
 import edu.byu.cs.tweeter.model.net.response.GetFollowingCountResponse;
@@ -63,18 +71,26 @@ public class StatusService {
             return new PostStatusResponse("Session expired");
         }
 
-        List<User> followers = getFollowDAO().getAllFollowers(request.getStatus().getUser().getAlias());
+        getStatusDAO().postStatusToStory(request);
 
-        return getStatusDAO().postStatus(request, followers);
+        GetFollowersQueueRequest batchRequest = new GetFollowersQueueRequest(request.getStatus());
+
+        String messageBody = JsonSerializer.serialize(batchRequest);
+        SendMessageRequest SMSrequest = new SendMessageRequest().withQueueUrl("https://sqs.us-east-1.amazonaws.com/924350594575/tweeterGetFollowersQueue").withMessageBody(messageBody);
+
+        AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
+        sqs.sendMessage(SMSrequest);
+
+        return new PostStatusResponse();
+    }
+
+    public void batchFeedUpdate(BatchFeedRequest request) {
+        getStatusDAO().addStatusBatchToFeed(request.getFollowersAliases(), request.getStatus());
     }
 
     StatusDAO getStatusDAO() {
         return daoProvider.getDaoFactory().getStatusDAO();
     }
-    FollowDAO getFollowDAO() {
-        return daoProvider.getDaoFactory().getFollowDAO();
-    }
-
     AuthTokenDAO getAuthTokenDAO() {
         return daoProvider.getDaoFactory().getAuthTokenDAO();
     }

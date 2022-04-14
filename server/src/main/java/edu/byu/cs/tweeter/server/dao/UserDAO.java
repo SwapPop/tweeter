@@ -1,5 +1,7 @@
 package edu.byu.cs.tweeter.server.dao;
 
+import java.util.List;
+
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FollowRequest;
@@ -36,4 +38,5 @@ public interface UserDAO {
     void decreaseFollowCounts(UnfollowRequest request, String userAlias);
 
     User getUserByAlias(String followeeHandle);
+    void addUserBatch(List<User> users);
 }

@@ -14,6 +14,7 @@ import edu.byu.cs.tweeter.model.domain.User;
 
 public abstract class PagedPresenter<T> extends Presenter{
 
+    //updated for bigger batches!
     protected static final int PAGE_SIZE = 10;
     PagedView<T> view;
     protected T lastItem;

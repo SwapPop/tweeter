@@ -6,21 +6,26 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FollowRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
+import edu.byu.cs.tweeter.model.net.request.GetFollowersCountRequest;
 import edu.byu.cs.tweeter.model.net.request.IsFollowerRequest;
 import edu.byu.cs.tweeter.model.net.request.UnfollowRequest;
+import edu.byu.cs.tweeter.model.net.response.BatchFeedResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
@@ -147,48 +152,44 @@ public class FollowDAODynamoDB implements FollowDAO{
         assert request.getLimit() > 0;
         assert request.getFolloweeAlias() != null;
 
-        List<User> allFollowers = getAllFollowers(request.getFolloweeAlias());
+        BatchFeedResponse response = getAllFollowersAliases(request.getFolloweeAlias(), request.getLimit(), request.getLastFollowerAlias());
+        List<String> followerHandles = response.getFollowersAliases();
+        boolean hasMorePages = response.getHasMorePages();
 
-        List<User> responseFollowers = new ArrayList<>(request.getLimit());
+        DAOFactory factory = new DAOFactoryProvider().getDaoFactory();
 
-        boolean hasMorePages = false;
-
-        if(request.getLimit() > 0) {
-            if (allFollowers != null) {
-                int followersIndex = getFollowersStartingIndex(request.getLastFollowerAlias(), allFollowers);
-
-                for(int limitCounter = 0; followersIndex < allFollowers.size() && limitCounter < request.getLimit(); followersIndex++, limitCounter++) {
-                    responseFollowers.add(allFollowers.get(followersIndex));
-                }
-
-                hasMorePages = followersIndex < allFollowers.size();
-            }
+        List<User> followersPage = new ArrayList<>();
+        for (String handle : followerHandles) {
+            User user = factory.getUserDAO().getUserByAlias(handle);
+            followersPage.add(user);
         }
 
-        return new FollowersResponse(responseFollowers, hasMorePages);
+        return new FollowersResponse(followersPage, hasMorePages);
     }
 
-    public List<User> getAllFollowers(String followeeAlias) {
+    @Override
+    public BatchFeedResponse getAllFollowersAliases(String alias, int limit, String lastFollowerAlias) {
         AmazonDynamoDB client=AmazonDynamoDBClientBuilder.standard()
                 .withRegion("us-east-1")
                 .build();
-
         DynamoDB dynamoDB=new DynamoDB(client);
-
         Table table=dynamoDB.getTable("follows");
-
         Index index =table.getIndex("follows_index");
 
         HashMap<String, Object> valueMap = new HashMap<String, Object>();
-        valueMap.put(":feh", followeeAlias);
+        valueMap.put(":feh", alias);
 
         QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("followee_handle = :feh")
-                .withValueMap(valueMap).withScanIndexForward(false);
+                .withValueMap(valueMap).withScanIndexForward(true);
 
-        ItemCollection<QueryOutcome> followers = null;
-        Iterator<Item> iter = null;
-        Item item = null;
-        List<User> allFollowers = new ArrayList<>();
+        ItemCollection<QueryOutcome> followers;
+        Iterator<Item> iter;
+        Item item;
+        List<String> followerHandles = new ArrayList<>();
+
+        List<String> followerPage = new ArrayList<>();
+
+        boolean hasMorePages = false;
 
         try {
             followers = index.query(querySpec);
@@ -197,16 +198,26 @@ public class FollowDAODynamoDB implements FollowDAO{
             while (iter.hasNext()) {
                 item = iter.next();
                 String followerHandle = item.getString("follower_handle");
-                DAOFactoryProvider provider = new DAOFactoryProvider();
-                User user = provider.getDaoFactory().getUserDAO().getUserByAlias(followerHandle);
-                allFollowers.add(user);
+                followerHandles.add(followerHandle);
             }
 
         } catch (Exception e) {
             System.err.println("Unable to query relationship");
             System.err.println(e.getMessage());
         }
-        return allFollowers;
+
+        if(limit > 0) {
+            if (followerHandles != null) {
+                int followersIndex = getFollowersStartingIndex(lastFollowerAlias, followerHandles);
+
+                for(int limitCounter = 0; followersIndex < followerHandles.size() && limitCounter < limit; followersIndex++, limitCounter++) {
+                    followerPage.add(followerHandles.get(followersIndex));
+                }
+                hasMorePages = followersIndex < followerHandles.size();
+            }
+        }
+
+        return new BatchFeedResponse(followerPage, hasMorePages);
     }
 
     /**
@@ -239,7 +250,7 @@ public class FollowDAODynamoDB implements FollowDAO{
         return followeesIndex;
     }
 
-    private int getFollowersStartingIndex(String lastFollowerAlias, List<User> allFollowers) {
+    private int getFollowersStartingIndex(String lastFollowerAlias, List<String> allFollowers) {
 
         int followersIndex = 0;
 
@@ -247,7 +258,7 @@ public class FollowDAODynamoDB implements FollowDAO{
             // This is a paged request for something after the first page. Find the first item
             // we should return
             for (int i = 0; i < allFollowers.size(); i++) {
-                if(lastFollowerAlias.equals(allFollowers.get(i).getAlias())) {
+                if(lastFollowerAlias.equals(allFollowers.get(i))) {
                     // We found the index of the last item returned last time. Increment to get
                     // to the first one we should return
                     followersIndex = i + 1;
